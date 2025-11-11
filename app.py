@@ -230,18 +230,41 @@ def install():
     if force_reset and request.method == "GET":
         # Force reset: delete all users and related data
         try:
-            # Delete all records from all tables
-            from models import User, Server, Channel, Video, Message, VideoLike, VideoComment, WatchLater, Subscription, Sponsor
+            # Import all models
+            from models import (User, Server, Channel, Video, Message, VideoLike, VideoComment, 
+                              WatchLater, Subscription, Sponsor, Membership, Role, RoleMembership,
+                              Activity, Playlist, PlaylistVideo, Short, Notification, VoiceParticipant,
+                              Friendship, DirectMessage, RtcSignal, Post, PostLike, PostComment,
+                              Emoji, MessageReaction, EmailVerification)
             
+            # Delete all records from all tables (in correct order to avoid foreign key issues)
+            db.session.query(MessageReaction).delete()
+            db.session.query(PostComment).delete()
+            db.session.query(PostLike).delete()
+            db.session.query(Post).delete()
+            db.session.query(RtcSignal).delete()
+            db.session.query(DirectMessage).delete()
+            db.session.query(Friendship).delete()
+            db.session.query(VoiceParticipant).delete()
+            db.session.query(Notification).delete()
+            db.session.query(Short).delete()
+            db.session.query(PlaylistVideo).delete()
+            db.session.query(Playlist).delete()
             db.session.query(VideoComment).delete()
             db.session.query(VideoLike).delete()
             db.session.query(WatchLater).delete()
             db.session.query(Subscription).delete()
+            db.session.query(Activity).delete()
             db.session.query(Message).delete()
             db.session.query(Video).delete()
+            db.session.query(RoleMembership).delete()
+            db.session.query(Role).delete()
+            db.session.query(Membership).delete()
             db.session.query(Channel).delete()
             db.session.query(Server).delete()
             db.session.query(Sponsor).delete()
+            db.session.query(Emoji).delete()
+            db.session.query(EmailVerification).delete()
             db.session.query(User).delete()
             
             db.session.commit()
