@@ -228,24 +228,40 @@ def install():
     force_reset = request.args.get("grambo_reset_secret") == "grambo2024"
     
     if force_reset and request.method == "GET":
-        # Force reset: drop all tables and delete database
+        # Force reset: clear ALL data
         try:
+            # Close all sessions first
             db.session.remove()
+            # Drop all tables
             db.drop_all()
-            db.session.close()
+            # Commit to ensure changes
+            db.session.commit()
+        except Exception as e:
+            print(f"Drop tables error: {e}")
+            try:
+                db.session.rollback()
+            except:
+                pass
+        
+        # Delete physical database files
+        try:
             db_path = os.path.join(BASE_DIR, "cannaspot.db")
             instance_db = os.path.join(BASE_DIR, "instance", "cannaspot.db")
+            
+            import time
+            time.sleep(0.5)  # Brief pause to ensure session closed
+            
             if os.path.exists(db_path):
                 os.remove(db_path)
-                print(f"Deleted: {db_path}")
+                print(f"✅ Deleted: {db_path}")
             if os.path.exists(instance_db):
                 os.remove(instance_db)
-                print(f"Deleted: {instance_db}")
-            print("✅ Database reset complete!")
+                print(f"✅ Deleted: {instance_db}")
         except Exception as e:
-            print(f"Reset error: {e}")
-        # Redirect to home, which will redirect to welcome
-        return redirect("/")
+            print(f"File delete error: {e}")
+        
+        # Return message instead of redirect to confirm it worked
+        return "Database reset complete! Now visit the home page: <a href='/'>Click here</a>"
     
     try:
         has_user = db.session.query(User.id).first()
