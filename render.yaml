@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: cannaspot
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT wsgi:application --timeout 120 --workers 4
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cannaspot-db
+          property: connectionString
+
+databases:
+  - name: cannaspot-db
+    plan: free
+    databaseName: cannaspot
+    user: cannaspot

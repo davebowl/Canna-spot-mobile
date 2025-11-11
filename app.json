@@ -1,0 +1,59 @@
+{
+  "name": "CannaSpot",
+  "description": "Video hosting platform with Discord-style servers, voice chat, and casino games",
+  "repository": "https://github.com/yourusername/cannaspot",
+  "logo": "https://cannaspot.com/static/logo.png",
+  "keywords": ["flask", "python", "video", "social", "cannabis"],
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "env": {
+    "FLASK_ENV": {
+      "description": "Flask environment mode",
+      "value": "production"
+    },
+    "SECRET_KEY": {
+      "description": "Secret key for Flask sessions (will be auto-generated)",
+      "generator": "secret"
+    },
+    "DATABASE_URL": {
+      "description": "PostgreSQL database URL (auto-provided by Heroku Postgres addon)",
+      "required": false
+    },
+    "SMTP_HOST": {
+      "description": "SMTP server hostname (optional)",
+      "required": false
+    },
+    "SMTP_PORT": {
+      "description": "SMTP server port",
+      "value": "587",
+      "required": false
+    },
+    "SMTP_USER": {
+      "description": "SMTP username (optional)",
+      "required": false
+    },
+    "SMTP_PASS": {
+      "description": "SMTP password (optional)",
+      "required": false
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "echo 'Visit /install to complete setup'"
+  }
+}
