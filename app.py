@@ -228,40 +228,31 @@ def install():
     force_reset = request.args.get("grambo_reset_secret") == "grambo2024"
     
     if force_reset and request.method == "GET":
-        # Force reset: clear ALL data
+        # Force reset: delete all users and related data
         try:
-            # Close all sessions first
-            db.session.remove()
-            # Drop all tables
-            db.drop_all()
-            # Commit to ensure changes
+            # Delete all records from all tables
+            from models import User, Server, Channel, Video, Message, VideoLike, VideoComment, WatchLater, Subscription, Sponsor
+            
+            db.session.query(VideoComment).delete()
+            db.session.query(VideoLike).delete()
+            db.session.query(WatchLater).delete()
+            db.session.query(Subscription).delete()
+            db.session.query(Message).delete()
+            db.session.query(Video).delete()
+            db.session.query(Channel).delete()
+            db.session.query(Server).delete()
+            db.session.query(Sponsor).delete()
+            db.session.query(User).delete()
+            
             db.session.commit()
-        except Exception as e:
-            print(f"Drop tables error: {e}")
-            try:
-                db.session.rollback()
-            except:
-                pass
-        
-        # Delete physical database files
-        try:
-            db_path = os.path.join(BASE_DIR, "cannaspot.db")
-            instance_db = os.path.join(BASE_DIR, "instance", "cannaspot.db")
+            print("✅ All data deleted from database!")
             
-            import time
-            time.sleep(0.5)  # Brief pause to ensure session closed
-            
-            if os.path.exists(db_path):
-                os.remove(db_path)
-                print(f"✅ Deleted: {db_path}")
-            if os.path.exists(instance_db):
-                os.remove(instance_db)
-                print(f"✅ Deleted: {instance_db}")
         except Exception as e:
-            print(f"File delete error: {e}")
+            print(f"Delete data error: {e}")
+            db.session.rollback()
         
-        # Return message instead of redirect to confirm it worked
-        return "Database reset complete! Now visit the home page: <a href='/'>Click here</a>"
+        # Return message with link to home
+        return "All data cleared! The site is ready for fresh installation. <br><br><a href='/'>Go to Welcome Page</a>"
     
     try:
         has_user = db.session.query(User.id).first()
