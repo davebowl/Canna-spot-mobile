@@ -4,7 +4,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, flash, abort
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
@@ -217,6 +217,11 @@ def jinja_date(value, fmt: str = "%b %d, %Y"):
     except Exception:
         return str(value)
 
+@app.route("/welcome")
+def welcome():
+    """Welcome page thanking Gramo Grows - shown before installation"""
+    return render_template("welcome.html")
+
 @app.route("/install", methods=["GET","POST"])
 def install():
     try:
@@ -225,6 +230,28 @@ def install():
             return redirect(url_for("installed"))
     except Exception:
         pass
+    if request.method == "POST":
+        # Create backup before installation
+        import shutil
+        from datetime import datetime
+        backup_dir = os.path.join(BASE_DIR, "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        # Backup database if it exists
+        db_path = os.path.join(BASE_DIR, "cannaspot.db")
+        if os.path.exists(db_path):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = os.path.join(backup_dir, f"cannaspot_backup_{timestamp}.db")
+            shutil.copy2(db_path, backup_path)
+            print(f"✅ Database backed up to: {backup_path}")
+        
+        # Backup uploads directory
+        if os.path.exists(UPLOAD_DIR):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_uploads = os.path.join(backup_dir, f"uploads_backup_{timestamp}")
+            shutil.copytree(UPLOAD_DIR, backup_uploads, dirs_exist_ok=True)
+            print(f"✅ Uploads backed up to: {backup_uploads}")
+        
     if request.method == "POST":
         engine = request.form.get("engine","sqlite")
         secret = request.form.get("secret") or secrets.token_hex(16)
@@ -321,6 +348,42 @@ def install():
         db.session.add_all([Membership(user_id=admin.id, server_id=srv.id), Membership(user_id=bot.id, server_id=srv.id)])
         db.session.add(Sponsor(name="Top420Seeds.com", url="https://top420seeds.com", logo="/static/logo.png", active=True))
         db.session.commit()
+        
+        # Populate with cannabis grow videos
+        print("📺 Populating recent videos with real YouTube cannabis content...")
+        youtube_videos = [
+            {"video_id": "BYPuaF8JE7Y", "title": "Complete Cannabis Grow: Seed to Harvest", "description": "Full cannabis grow from seed to harvest with detailed walkthrough"},
+            {"video_id": "0aAHrrfeQKI", "title": "Autoflower Seed to Harvest - Full Grow Time Lapse", "description": "Complete autoflower cannabis grow from seed germination to harvest"},
+            {"video_id": "TqfYe4F7M_c", "title": "First Time Growing Cannabis - Seed to Harvest", "description": "Beginner's guide to growing cannabis from seed to harvest"},
+            {"video_id": "jEoMEm8S8fQ", "title": "Indoor Cannabis Grow: Seed to Harvest Tutorial", "description": "Complete indoor cannabis grow guide from seed to harvest"},
+            {"video_id": "yZLqQUfj7Lo", "title": "Organic Cannabis Growing - Seed to Harvest", "description": "Organic living soil cannabis grow from seed to harvest"},
+            {"video_id": "Nb7cKYhJj6E", "title": "Hydroponic Cannabis Grow: Seed to Harvest", "description": "DWC hydroponic cannabis growing from seed to harvest"},
+            {"video_id": "L8cCPH1qnYI", "title": "Budget Cannabis Grow - Seed to Harvest Under $200", "description": "Affordable cannabis grow setup and complete seed to harvest"},
+            {"video_id": "dCyil70E4Dg", "title": "LST Training: Seed to Harvest Results", "description": "Low stress training cannabis from seedling to harvest"},
+            {"video_id": "C0pTu5J8UYQ", "title": "Outdoor Cannabis Grow - Seed to Harvest", "description": "Full outdoor cannabis growing season from seed to harvest"},
+            {"video_id": "7BGPAEj5FQM", "title": "SCROG Method: Seed to Harvest Guide", "description": "Screen of green growing method from seed to harvest"},
+            {"video_id": "ID-vHBPdp1I", "title": "Cannabis Nutrient Guide: Seed to Harvest", "description": "Complete nutrient feeding schedule from seed to harvest"},
+            {"video_id": "lX3uCuFKlqw", "title": "LED Grow Light Setup - Seed to Harvest", "description": "Complete LED cannabis grow from seed to harvest"},
+            {"video_id": "mPRy1B4t5YA", "title": "Coco Coir Growing: Seed to Harvest", "description": "Cannabis growing in coco coir from seed to harvest"},
+            {"video_id": "gLpe5foAIgQ", "title": "Topping and Training: Seed to Harvest", "description": "Plant training techniques from seedling to harvest"},
+            {"video_id": "nU9vGLr9r3s", "title": "Small Space Grow: Seed to Harvest in Tent", "description": "Growing cannabis in a small tent from seed to harvest"},
+        ]
+        
+        base_date = datetime.utcnow() - timedelta(days=len(youtube_videos) * 2)
+        for i, vid_data in enumerate(youtube_videos):
+            video_id = vid_data["video_id"]
+            video = Video(
+                title=vid_data["title"],
+                filename=f"https://www.youtube.com/embed/{video_id}",  # YouTube embed URL
+                thumbnail=f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+                description=vid_data["description"],
+                uploader_id=bot.id,
+                created_at=base_date + timedelta(days=i*2)
+            )
+            db.session.add(video)
+        db.session.commit()
+        print(f"✅ Added {len(youtube_videos)} real YouTube cannabis grow videos!")
+
         
         # Try to send welcome email to admin if SMTP is configured
         if smtp_host:
@@ -428,8 +491,8 @@ def recent():
         # Check if database is initialized
         user_count = User.query.count()
         if user_count == 0:
-            # No users, redirect to install
-            return redirect(url_for("install"))
+            # No users, redirect to welcome page
+            return redirect(url_for("welcome"))
         
         # Get GrowBot user ID (YouTube videos uploader)
         bot = User.query.filter_by(username="GrowBot").first()
@@ -451,9 +514,9 @@ def recent():
         servers = Server.query.order_by(Server.name).all()
         return render_template("recent.html", videos=vids, uploaded=uploaded_vids, youtube=youtube_vids, servers=servers, user=current_user())
     except Exception as e:
-        # Database not initialized, redirect to install
+        # Database not initialized, redirect to welcome
         print(f"Error loading home page: {e}")
-        return redirect(url_for("install"))
+        return redirect(url_for("welcome"))
 
 @app.route("/watch/<int:vid>", methods=["GET", "POST"])
 def watch(vid):

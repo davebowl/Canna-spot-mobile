@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Welcome to CannaSpot{% endblock %}
+{% block content %}
+<style>
+    .welcome-container {
+        max-width: 800px;
+        margin: 100px auto;
+        padding: 40px;
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        text-align: center;
+    }
+    .welcome-logo {
+        margin-bottom: 30px;
+        animation: float 3s ease-in-out infinite;
+    }
+    .welcome-logo img {
+        width: 200px;
+        height: auto;
+        filter: drop-shadow(0 0 20px rgba(76, 175, 80, 0.5));
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    .welcome-title {
+        font-size: 48px;
+        font-weight: bold;
+        color: #4CAF50;
+        margin-bottom: 20px;
+        text-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+    }
+    .thank-you {
+        font-size: 24px;
+        color: #fff;
+        margin: 30px 0;
+        line-height: 1.6;
+    }
+    .gramo-highlight {
+        color: #4CAF50;
+        font-weight: bold;
+        font-size: 28px;
+        text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+    }
+    .message {
+        font-size: 18px;
+        color: #ccc;
+        margin: 20px 0;
+        line-height: 1.8;
+    }
+    .continue-btn {
+        display: inline-block;
+        margin-top: 40px;
+        padding: 15px 50px;
+        background: #4CAF50;
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all 0.3s;
+        box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+    }
+    .continue-btn:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
+    }
+    .leaf-icon {
+        display: inline-block;
+        margin: 0 10px;
+        font-size: 32px;
+    }
+</style>
+
+<div class="welcome-container">
+    <div class="welcome-logo">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="CannaSpot Logo">
+    </div>
+    <h1 class="welcome-title">Welcome to CannaSpot</h1>
+    
+    <div class="thank-you">
+        <span class="leaf-icon">🌱</span>
+        A Special Thank You to
+        <span class="leaf-icon">🌱</span>
+    </div>
+    
+    <div class="gramo-highlight">GRAMBO GROWS</div>
+    
+    <div class="message">
+        For this incredible opportunity to bring the cannabis growing community together.<br>
+        Your vision and support made this platform possible.
+    </div>
+    
+    <div class="message" style="margin-top: 40px; font-size: 16px; color: #999;">
+        This installation will automatically back up your existing data<br>
+        before setting up your CannaSpot community.
+    </div>
+    
+    <a href="{{ url_for('install') }}" class="continue-btn">
+        Continue to Installation →
+    </a>
+</div>
+{% endblock %}
