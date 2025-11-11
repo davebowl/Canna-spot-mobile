@@ -224,6 +224,24 @@ def welcome():
 
 @app.route("/install", methods=["GET","POST"])
 def install():
+    # Allow reset with secret parameter
+    force_reset = request.args.get("grambo_reset_secret") == "grambo2024"
+    
+    if force_reset and request.method == "GET":
+        # Force reset: drop all tables and delete database
+        try:
+            db.drop_all()
+            db_path = os.path.join(BASE_DIR, "cannaspot.db")
+            instance_db = os.path.join(BASE_DIR, "instance", "cannaspot.db")
+            if os.path.exists(db_path):
+                os.remove(db_path)
+            if os.path.exists(instance_db):
+                os.remove(instance_db)
+        except Exception as e:
+            print(f"Reset error: {e}")
+        # Redirect to welcome page
+        return redirect(url_for("welcome"))
+    
     try:
         has_user = db.session.query(User.id).first()
         if has_user:
