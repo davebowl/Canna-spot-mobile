@@ -230,17 +230,22 @@ def install():
     if force_reset and request.method == "GET":
         # Force reset: drop all tables and delete database
         try:
+            db.session.remove()
             db.drop_all()
+            db.session.close()
             db_path = os.path.join(BASE_DIR, "cannaspot.db")
             instance_db = os.path.join(BASE_DIR, "instance", "cannaspot.db")
             if os.path.exists(db_path):
                 os.remove(db_path)
+                print(f"Deleted: {db_path}")
             if os.path.exists(instance_db):
                 os.remove(instance_db)
+                print(f"Deleted: {instance_db}")
+            print("✅ Database reset complete!")
         except Exception as e:
             print(f"Reset error: {e}")
-        # Redirect to welcome page
-        return redirect(url_for("welcome"))
+        # Redirect to home, which will redirect to welcome
+        return redirect("/")
     
     try:
         has_user = db.session.query(User.id).first()
