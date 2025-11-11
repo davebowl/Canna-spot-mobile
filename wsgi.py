@@ -27,20 +27,17 @@ from app import app as application
 with application.app_context():
     try:
         from models import db
-        # Check if tables exist before creating
+        # Try to create all tables (handles missing DB gracefully)
+        db.create_all()
+        
+        # Check if tables exist
         from sqlalchemy import inspect
         inspector = inspect(db.engine)
         existing_tables = inspector.get_table_names()
-        
-        if not existing_tables:
-            db.create_all()
-            print("✅ Database tables initialized successfully")
-        else:
-            print(f"✅ Database ready ({len(existing_tables)} tables exist)")
+        print(f"✅ Database ready ({len(existing_tables)} tables exist)")
     except Exception as e:
-        # Silently handle if tables already exist
-        if "already exists" not in str(e):
-            print(f"⚠️ Database initialization note: {e}")
+        print(f"⚠️ Database error: {e}")
+        print("Note: SQLite resets on each deployment. Use PostgreSQL for production.")
 
 # WSGI entry point for LiteSpeed
 if __name__ == '__main__':
