@@ -229,6 +229,8 @@ def install():
     
     if force_reset and request.method == "GET":
         # Force reset: delete all users and related data
+        errors = []
+        success_count = 0
         try:
             # Import all models
             from models import (User, Server, Channel, Video, Message, VideoLike, VideoComment, 
@@ -238,44 +240,61 @@ def install():
                               Emoji, MessageReaction, EmailVerification)
             
             # Delete all records from all tables (in correct order to avoid foreign key issues)
-            db.session.query(MessageReaction).delete()
-            db.session.query(PostComment).delete()
-            db.session.query(PostLike).delete()
-            db.session.query(Post).delete()
-            db.session.query(RtcSignal).delete()
-            db.session.query(DirectMessage).delete()
-            db.session.query(Friendship).delete()
-            db.session.query(VoiceParticipant).delete()
-            db.session.query(Notification).delete()
-            db.session.query(Short).delete()
-            db.session.query(PlaylistVideo).delete()
-            db.session.query(Playlist).delete()
-            db.session.query(VideoComment).delete()
-            db.session.query(VideoLike).delete()
-            db.session.query(WatchLater).delete()
-            db.session.query(Subscription).delete()
-            db.session.query(Activity).delete()
-            db.session.query(Message).delete()
-            db.session.query(Video).delete()
-            db.session.query(RoleMembership).delete()
-            db.session.query(Role).delete()
-            db.session.query(Membership).delete()
-            db.session.query(Channel).delete()
-            db.session.query(Server).delete()
-            db.session.query(Sponsor).delete()
-            db.session.query(Emoji).delete()
-            db.session.query(EmailVerification).delete()
-            db.session.query(User).delete()
+            tables_to_clear = [
+                ('MessageReaction', MessageReaction),
+                ('PostComment', PostComment),
+                ('PostLike', PostLike),
+                ('Post', Post),
+                ('RtcSignal', RtcSignal),
+                ('DirectMessage', DirectMessage),
+                ('Friendship', Friendship),
+                ('VoiceParticipant', VoiceParticipant),
+                ('Notification', Notification),
+                ('Short', Short),
+                ('PlaylistVideo', PlaylistVideo),
+                ('Playlist', Playlist),
+                ('VideoComment', VideoComment),
+                ('VideoLike', VideoLike),
+                ('WatchLater', WatchLater),
+                ('Subscription', Subscription),
+                ('Activity', Activity),
+                ('Message', Message),
+                ('Video', Video),
+                ('RoleMembership', RoleMembership),
+                ('Role', Role),
+                ('Membership', Membership),
+                ('Channel', Channel),
+                ('Server', Server),
+                ('Sponsor', Sponsor),
+                ('Emoji', Emoji),
+                ('EmailVerification', EmailVerification),
+                ('User', User),
+            ]
+            
+            for table_name, model in tables_to_clear:
+                try:
+                    count = db.session.query(model).delete()
+                    success_count += count
+                    print(f"Deleted {count} records from {table_name}")
+                except Exception as e:
+                    errors.append(f"{table_name}: {str(e)}")
+                    print(f"Error deleting {table_name}: {e}")
             
             db.session.commit()
-            print("✅ All data deleted from database!")
+            print(f"✅ Total records deleted: {success_count}")
             
         except Exception as e:
+            errors.append(f"General error: {str(e)}")
             print(f"Delete data error: {e}")
             db.session.rollback()
         
-        # Return message with link to home
-        return "All data cleared! The site is ready for fresh installation. <br><br><a href='/'>Go to Welcome Page</a>"
+        # Return detailed message
+        msg = f"<h2>Database Reset Complete!</h2>"
+        msg += f"<p>Deleted {success_count} total records.</p>"
+        if errors:
+            msg += f"<p style='color:red'>Errors: {', '.join(errors)}</p>"
+        msg += "<br><a href='/'>Go to Welcome Page</a>"
+        return msg
     
     try:
         has_user = db.session.query(User.id).first()
