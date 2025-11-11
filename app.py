@@ -399,6 +399,24 @@ def install():
 def installed():
     return render_template("installed.html")
 
+@app.route("/reset-for-grambo-secret")
+def reset_for_grambo():
+    """Secret route to reset database for fresh installation"""
+    import shutil
+    try:
+        # Drop all tables
+        db.drop_all()
+        # Delete database files
+        db_path = os.path.join(BASE_DIR, "cannaspot.db")
+        instance_db = os.path.join(BASE_DIR, "instance", "cannaspot.db")
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        if os.path.exists(instance_db):
+            os.remove(instance_db)
+        return "Database reset! Visit / to see welcome page."
+    except Exception as e:
+        return f"Error: {e}"
+
 from sqlalchemy import func
 @app.route("/login", methods=["GET","POST"])
 def login():
