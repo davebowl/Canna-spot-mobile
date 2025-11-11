@@ -1,6 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
+.welcome-banner {
+    max-width: 700px;
+    margin: 40px auto 20px;
+    padding: 40px;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.05) 100%);
+    border: 2px solid var(--green);
+    border-radius: 12px;
+    text-align: center;
+}
+.welcome-banner h1 {
+    font-size: 2.5em;
+    margin: 0 0 20px 0;
+    color: var(--text);
+}
+.welcome-banner .grambo-highlight {
+    color: var(--green);
+    font-weight: bold;
+    font-size: 1.2em;
+    text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+.welcome-banner p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: var(--text);
+    margin: 15px 0;
+}
+.welcome-divider {
+    max-width: 700px;
+    margin: 30px auto;
+    text-align: center;
+    color: var(--green);
+    font-size: 1.5em;
+}
 .install-card { max-width: 600px; margin: 40px auto; padding: 30px; }
 .install-section { margin: 30px 0; padding: 20px; background: var(--soft); border-radius: 8px; border: 1px solid var(--green); }
 .install-section h3 { margin-top: 0; color: var(--green); }
@@ -30,6 +63,16 @@ input[type="text"], input[type="password"], input[type="email"], input[type="url
 .install-card p { color: var(--dim); }
 textarea { font-family: inherit; resize: vertical; }
 </style>
+
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <h1>🌿 Welcome to CannaSpot!</h1>
+    <p>This platform is made possible thanks to</p>
+    <div class="grambo-highlight">GRAMBO GROWS</div>
+    <p style="margin-top: 20px;">Thank you for this incredible opportunity to bring the cannabis community together!</p>
+</div>
+
+<div class="welcome-divider">⬇️ Let's get started! ⬇️</div>
 
 <div class="install-card card">
     <h1>🌿 CannaSpot Installation</h1>
