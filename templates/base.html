@@ -1,0 +1,257 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><title>{{ title or "CannaSpot" }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="/static/favicon.ico"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/channel-nav.css">
+<link rel="stylesheet" href="/static/css/discord.css">
+<script defer src="/static/js/leafs.js"></script><script defer src="/static/js/emoji.js"></script>
+</head><body>
+
+<!-- Top header bar (simplified) -->
+<header class="top">
+  <button id="navToggle" class="hamburger" aria-label="Open menu">☰</button>
+  <a class="brand" href="{{ url_for('recent') }}">
+    <img src="/static/logo.png" class="logo" alt="CannaSpot">
+    <strong class="brand-text">CannaSpot</strong>
+  </a>
+  
+  <!-- Search Bar -->
+  <form action="{{ url_for('search') }}" method="get" style="flex:1;max-width:500px;margin:0 20px">
+    <input type="search" name="q" placeholder="🔍 Search videos, users, servers..." style="width:100%;padding:10px 15px;background:var(--soft);border:1px solid var(--green);border-radius:20px;color:var(--text)">
+  </form>
+  
+  <div class="right">
+    {% if user %}
+      {% if user.is_admin %}
+        <a href="{{ url_for('admin_panel') }}" class="login-btn" style="background:var(--green);color:var(--bg);margin-right:8px" title="Admin Panel">⚙️ Admin</a>
+      {% endif %}
+    {% else %}
+      <a href="{{ url_for('login') }}" class="login-btn">Login</a>
+      <a href="{{ url_for('register') }}" class="signup-btn">Sign Up</a>
+    {% endif %}
+  </div>
+  
+</header>
+
+<div id="overlay" class="overlay hidden"></div>
+
+<!-- Left sidebar with server bubbles and CannaSpot navigation -->
+<nav class="leftbar">
+  <!-- Server icon bubbles (vertical) -->
+  <div class="server-list">
+    <a id="homeBubble" href="{{ url_for('messages') }}" class="server-icon" title="Messages">💬</a>
+    {% if servers %}
+      {% for s in servers %}
+        <a href="{{ url_for('server', slug=s.slug) }}" class="server-icon" title="{{ s.name }}" style="position:relative">
+          {% if s.server_icon %}
+            <img src="{{ s.server_icon }}" alt="{{ s.name[:1] }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+          {% else %}
+            {{ s.name[:1] }}
+          {% endif %}
+          <span class="server-badge" id="server-badge-{{ s.id }}" style="display:none"></span>
+        </a>
+      {% endfor %}
+    {% endif %}
+    {% if user %}
+      <a href="{{ url_for('create_server') }}" class="server-icon" title="Create Server" style="font-size:32px">+</a>
+    {% endif %}
+  </div>
+
+  <!-- CannaSpot navigation -->
+  <div class="cannaspot-nav">
+    <div class="channel-category">Main</div>
+    <a href="{{ url_for('recent') }}" class="channel-item">🏠 Home</a>
+    <a href="{{ url_for('shorts') }}" class="channel-item">⚡ Shorts</a>
+    <a href="{{ url_for('slots') }}" class="channel-item">🎰 Slots</a>
+    <a href="{{ url_for('subscriptions') }}" class="channel-item">▶ Subscriptions</a>
+    
+    {% if user %}
+      <div class="channel-category">Create</div>
+      <a href="{{ url_for('upload') }}" class="channel-item">📹 Upload video</a>
+      <a href="{{ url_for('upload_short') }}" class="channel-item">🎬 Upload short</a>
+      <a href="{{ url_for('go_live') }}" class="channel-item">🔴 Go live</a>
+      <a href="{{ url_for('create_post') }}" class="channel-item">✍️ Create post</a>
+
+      <div class="channel-category">You</div>
+      <a href="{{ url_for('my_videos') }}" class="channel-item">🎬 Your videos</a>
+      <a href="{{ url_for('watch_later') }}" class="channel-item">⏰ Watch later</a>
+      <a href="{{ url_for('liked') }}" class="channel-item">👍 Liked videos</a>
+      <a href="{{ url_for('playlists') }}" class="channel-item">▸ Playlists</a>
+      <a href="{{ url_for('downloads') }}" class="channel-item">⬇ Downloads</a>
+      
+      <div class="channel-category">Social</div>
+      <a href="{{ url_for('friends') }}" class="channel-item">👥 Friends</a>
+      <a href="{{ url_for('members') }}" class="channel-item">🌐 Members</a>
+      <a href="{{ url_for('messages') }}" class="channel-item">
+        💬 Messages
+        <span id="msgCount" class="msg-badge"></span>
+      </a>
+
+      <div class="channel-category">Notifications</div>
+      <a href="{{ url_for('notifications') }}" class="channel-item">🔔 Notifications <span id="notifCountSide" class="msg-badge"></span></a>
+
+      <div class="channel-category">Account</div>
+      {% if user.is_admin %}<a href="{{ url_for('admin_panel') }}" class="channel-item">⚙️ Admin</a>{% endif %}
+      <a href="{{ url_for('my_profile') }}" class="channel-item">👤 Profile</a>
+      <a href="{{ url_for('logout') }}" class="channel-item">🚪 Logout</a>
+    {% endif %}
+
+    <div class="channel-category">Extra</div>
+    <a href="{{ url_for('music') }}" class="channel-item">🎵 CannaSpot Music</a>
+  </div>
+</nav>
+<script>
+  const navBtn = document.getElementById('navToggle');
+  const overlayEl = document.getElementById('overlay');
+  navBtn?.addEventListener('click', ()=>{
+    const open = document.body.classList.toggle('nav-open');
+    overlayEl?.classList.toggle('hidden', !open);
+  });
+  overlayEl?.addEventListener('click', ()=>{
+    document.body.classList.remove('nav-open');
+    overlayEl?.classList.add('hidden');
+  });
+  // Update notification badge (sidebar)
+  async function updateNotifBadge() {
+    const badge = document.getElementById('notifCountSide');
+    if(!badge) return;
+    try {
+      const res = await fetch('/api/notifications/unread');
+      const data = await res.json();
+      if(data.count > 0) {
+        badge.textContent = data.count;
+        badge.classList.add('show');
+      }
+    } catch(e) {}
+  }
+  updateNotifBadge();
+  
+  // Update message count
+  async function updateMsgCount() {
+    const badge = document.getElementById('msgCount');
+    if(!badge) return;
+    try {
+      const res = await fetch('/api/messages/unread');
+      const data = await res.json();
+      if(data.count > 0) {
+        badge.textContent = data.count;
+        badge.classList.add('show');
+      }
+    } catch(e) {}
+  }
+  updateMsgCount();
+  
+  // Send heartbeat to update last_seen every 2 minutes
+  {% if user %}
+  async function sendHeartbeat() {
+    try {
+      await fetch('/api/status/heartbeat', { method: 'POST' });
+    } catch(e) {}
+  }
+  sendHeartbeat();
+  setInterval(sendHeartbeat, 120000); // Every 2 minutes
+  {% endif %}
+  // Also update bottom notification badge if present
+  function updateBottomNotif(){
+    const b = document.getElementById('notifCountBottom');
+    if(!b) return;
+    fetch('/api/notifications/unread').then(r=>r.json()).then(d=>{
+      if(d.count && d.count>0){ b.textContent = d.count; b.classList.add('show'); }
+      else { b.textContent=''; b.classList.remove('show'); }
+    }).catch(()=>{});
+  }
+  updateBottomNotif();
+  setInterval(updateBottomNotif, 60000);
+
+  // Leftbar first bubble is Messages on all viewports; Home remains via the logo and sidebar menu
+</script>
+
+<main class="wrap">{% block content %}{% endblock %}</main>
+<footer class="footer">
+  <div class="sponsors">
+    <div class="title">Sponsor's Corner of Gratitude</div>
+    <div class="marquee">
+      <div class="marquee-content">
+        {% for s in sponsors %}
+        <a href="{{ s.url or '#' }}" class="sponsor" target="_blank">
+          {% if s.logo %}<img src="{{ s.logo }}" alt="{{ s.name }}">{% endif %}
+          <span>{{ s.name }}</span>
+        </a>
+        {% endfor %}
+        {% for s in sponsors %}
+        <a href="{{ s.url or '#' }}" class="sponsor" target="_blank">
+          {% if s.logo %}<img src="{{ s.logo }}" alt="{{ s.name }}">{% endif %}
+          <span>{{ s.name }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="sponsor-rotator">
+      {% if sponsors and sponsors|length > 0 %}
+        {% set first = sponsors[0] %}
+        <a href="{{ first.url or '#' }}" class="sponsor" target="_blank" id="rotatorLink">
+          <img src="{{ first.logo or '' }}" alt="{{ first.name }}" id="rotatorImg" style="display: {{ 'inline' if first.logo else 'none' }};">
+          <span id="rotatorName">{{ first.name }}</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="tiny">CannaSpot v{{ app_version }} &copy; 2025 CannaSpot™ - All Rights Reserved</div>
+  <script>
+    // Mobile sponsor rotator
+    (function(){
+      const isMobile = matchMedia('(max-width:639px)').matches;
+      if(!isMobile) return; // only run on mobile
+      const sponsorNodes = document.querySelectorAll('.marquee-content .sponsor');
+      if(!sponsorNodes || sponsorNodes.length === 0) return;
+      const half = Math.floor(sponsorNodes.length / 2) || sponsorNodes.length;
+      const sponsors = Array.from(sponsorNodes).slice(0, half).map(a => ({
+        name: (a.querySelector('span') && a.querySelector('span').textContent) || 'Sponsor',
+        url: a.getAttribute('href') || '#',
+        logo: (a.querySelector('img') && a.querySelector('img').getAttribute('src')) || ''
+      }));
+      let idx = 0;
+      const nameEl = document.getElementById('rotatorName');
+      const imgEl = document.getElementById('rotatorImg');
+      const linkEl = document.getElementById('rotatorLink');
+      function show(i){
+        const sp = sponsors[i];
+        nameEl.textContent = sp.name;
+        linkEl.href = sp.url || '#';
+        if(imgEl){
+          if(sp.logo){ imgEl.src = sp.logo; imgEl.alt = sp.name; imgEl.style.display='inline'; }
+          else { imgEl.style.display='none'; }
+        }
+      }
+      setInterval(()=>{ idx = (idx + 1) % sponsors.length; show(idx); }, 4000);
+    })();
+  </script>
+</footer>
+<!-- Mobile bottom sticky navigation -->
+<nav class="mobile-bottom-nav" role="navigation" aria-label="Mobile navigation">
+  <a href="{{ url_for('recent') }}" class="mobile-nav-item" aria-label="Home">
+    <span class="mobile-icon">🏠</span>
+    <span class="mobile-label">Home</span>
+  </a>
+  <a href="{{ url_for('notifications') }}" class="mobile-nav-item" aria-label="Notifications">
+    <span class="mobile-icon">🔔</span>
+    <span id="notifCountBottom" class="notif-badge"></span>
+    <span class="mobile-label">Alerts</span>
+  </a>
+  {% if user %}
+  <a href="{{ url_for('my_profile') }}" class="mobile-nav-item" aria-label="Profile">
+    <span class="mobile-icon">👤</span>
+    <span class="mobile-label">Profile</span>
+  </a>
+  {% else %}
+  <a href="{{ url_for('login') }}" class="mobile-nav-item" aria-label="Login">
+    <span class="mobile-icon">👤</span>
+    <span class="mobile-label">Login</span>
+  </a>
+  {% endif %}
+</nav>
+</body></html>

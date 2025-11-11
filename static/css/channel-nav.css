@@ -1,0 +1,113 @@
+/* Server and Channel Lists */
+.leftbar {
+  grid-area: leftbar;
+  display: flex;
+  height: calc(100vh - var(--header-height));
+}
+
+/* Server list (vertical, left side) */
+.server-list {
+  width: var(--server-list-width);
+  background: var(--card);
+  padding: 12px 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  border-right: 1px solid var(--border-glow);
+  box-shadow: inset 0 0 18px rgba(0,255,153,.12);
+}
+
+.server-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--soft);
+  border: 1px solid var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+  font-size: 24px;
+  text-decoration: none;
+  text-shadow: 0 0 10px var(--green);
+  position: relative;
+  overflow: hidden;
+}
+
+.server-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ff3333;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 8px rgba(255,51,51,0.6);
+}
+
+.server-icon:hover {
+  background: var(--green);
+  border-radius: 16px;
+  color: #000;
+  text-shadow: none;
+}
+
+.server-icon.active {
+  background: var(--green);
+  border-radius: 16px;
+  color: #000;
+  text-shadow: none;
+}
+
+/* CannaSpot navigation */
+.cannaspot-nav {
+  width: var(--channel-list-width);
+  background: var(--card);
+  padding: 16px 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--border-glow);
+  box-shadow: inset 0 0 18px rgba(0,255,153,.12);
+}
+
+.channel-category {
+  padding: 8px 16px;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+  opacity: 0.85;
+}
+
+.channel-item {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dim);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  margin: 0 8px;
+  border-radius: 8px;
+}
+
+.channel-item:hover {
+  background: var(--soft);
+  border-color: var(--green);
+  color: var(--text);
+}
+
+.channel-item.active {
+  background: var(--green);
+  color: #000;
+}

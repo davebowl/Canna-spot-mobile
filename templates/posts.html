@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="wrap" style="max-width:900px;margin:0 auto">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <h2 style="margin:0">Community Posts</h2>
+    {% if user %}<a href="{{ url_for('create_post') }}" class="btn small">+ New Post</a>{% endif %}
+  </div>
+  {% if posts %}
+    <div style="display:flex;flex-direction:column;gap:18px">
+      {% for p in posts %}
+      <article class="card" style="padding:16px" id="post-{{ p.id }}">
+        <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div>
+            <h3 style="margin:0;font-size:1.1rem"><a href="{{ url_for('view_post', pid=p.id) }}" style="text-decoration:none">{{ p.title }}</a></h3>
+            <div style="font-size:0.8rem;opacity:0.7">by <a href="{{ url_for('profile', username=p.author.username) }}">@{{ p.author.username }}</a> · {{ p.created_at|date }}{% if p.updated_at and p.updated_at != p.created_at %} · edited{% endif %}</div>
+          </div>
+          {% if user and user.id == p.author.id %}
+          <div class="dropdown" style="position:relative">
+            <button class="btn tiny" onclick="togglePostMenu({{ p.id }});return false">•••</button>
+            <div class="menu" id="post-menu-{{ p.id }}" style="display:none;position:absolute;right:0;top:34px;background:#222;border:1px solid #333;border-radius:6px;min-width:140px;z-index:20">
+              <a href="{{ url_for('edit_post', pid=p.id) }}" class="menu-item" style="display:block;padding:8px 12px;text-decoration:none">Edit</a>
+              <form method="post" action="{{ url_for('delete_post', pid=p.id) }}" onsubmit="return confirm('Delete this post?')">
+                <button class="menu-item" style="display:block;width:100%;text-align:left;padding:8px 12px;background:none;border:none;color:#eee;cursor:pointer">Delete</button>
+              </form>
+            </div>
+          </div>
+          {% endif %}
+        </header>
+        <div class="post-body" style="margin-top:10px;line-height:1.5">{{ p.content_html|safe }}</div>
+      </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No posts yet. {% if user %}<a href="{{ url_for('create_post') }}">Create the first one</a>.{% endif %}</p>
+  {% endif %}
+</section>
+<script>
+function togglePostMenu(id){
+  const m=document.getElementById('post-menu-'+id);if(!m)return;const open=m.style.display==='block';document.querySelectorAll('[id^=post-menu-]').forEach(x=>x.style.display='none');m.style.display=open?'none':'block';}
+window.addEventListener('click',e=>{if(!e.target.closest('.dropdown')){document.querySelectorAll('[id^=post-menu-]').forEach(x=>x.style.display='none');}});
+</script>
+{% endblock %}

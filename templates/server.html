@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block content %}
+<script>
+  // Replace only the CannaSpot nav content with server channels (keep server icons)
+  document.addEventListener('DOMContentLoaded', () => {
+    const nav = document.querySelector('.cannaspot-nav');
+    if (nav) {
+      nav.innerHTML = `
+        <div class="channel-category">
+          <a href="{{ url_for('recent') }}" class="channel-item" style="color:var(--green);font-weight:600">← Back to Home</a>
+        </div>
+        
+        <div class="channel-category">{{ server.name }}</div>
+        
+        <div class="channel-category" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Text Channels</span>
+          {% if user and is_member %}
+          <button id="addChannelBtn" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:1.2rem;padding:0 4px" title="Create Channel">+</button>
+          {% endif %}
+        </div>
+        {% for ch in channels if not ch.is_voice %}
+          <a href="{{ url_for('channel', slug=server.slug, cid=ch.id) }}" class="channel-item"># {{ ch.name }}</a>
+        {% endfor %}
+        
+        <div class="channel-category" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Voice Channels</span>
+          {% if user and is_member %}
+          <button id="addVoiceBtn" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:1.2rem;padding:0 4px" title="Create Voice Channel">+</button>
+          {% endif %}
+        </div>
+        {% for ch in channels if ch.is_voice %}
+          <a href="{{ url_for('voice_channel', slug=server.slug, cid=ch.id) }}" class="channel-item">
+            🔊 {{ ch.name }}
+            <span class="msg-badge" id="voice-{{ ch.id }}"></span>
+          </a>
+        {% endfor %}
+      `;
+      
+      // Re-attach event listeners after DOM update
+      setTimeout(() => {
+        document.getElementById('addChannelBtn')?.addEventListener('click', createTextChannel);
+        document.getElementById('addVoiceBtn')?.addEventListener('click', createVoiceChannel);
+      }, 100);
+    }
+  });
+  
+  async function createTextChannel() {
+    const name = prompt('Enter channel name:');
+    if (!name) return;
+    
+    const res = await fetch('/api/channel/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        server_slug: '{{ server.slug }}',
+        name: name,
+        is_voice: false
+      })
+    });
+    
+    if (res.ok) {
+      location.reload();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Failed to create channel');
+    }
+  }
+  
+  async function createVoiceChannel() {
+    const name = prompt('Enter voice channel name:');
+    if (!name) return;
+    
+    const res = await fetch('/api/channel/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        server_slug: '{{ server.slug }}',
+        name: name,
+        is_voice: true
+      })
+    });
+    
+    if (res.ok) {
+      location.reload();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Failed to create voice channel');
+    }
+  }
+  
+  // Update voice channel participant counts
+  async function updateVoiceCounts() {
+    const res = await fetch('/api/voice/counts/{{ server.slug }}');
+    if (res.ok) {
+      const counts = await res.json();
+      for (const [cid, count] of Object.entries(counts)) {
+        const el = document.getElementById('voice-' + cid);
+        if (el) {
+          if (count > 0) {
+            el.textContent = count;
+            el.classList.add('show');
+          } else {
+            el.textContent = '';
+            el.classList.remove('show');
+          }
+        }
+      }
+    }
+  }
+  updateVoiceCounts();
+  setInterval(updateVoiceCounts, 5000);
+</script>
+
+<div class="card">
+  <div class="server-info">
+    <h1>Welcome to {{ server.name }}!</h1>
+    <p>{{ members }} members</p>
+    {% if not is_member %}
+      <form method="post" action="{{ url_for('server', slug=server.slug) }}" style="margin-top:16px">
+        <button type="submit" class="btn">Join Server</button>
+      </form>
+    {% else %}
+      <p>Select a channel from the left sidebar to start chatting.</p>
+      {% if user and server.owner_id == user.id %}
+      <div style="margin-top:20px;padding:16px;background:#1a1a1a;border:2px solid #F59E0B;border-radius:8px">
+        <h3 style="margin:0 0 8px 0">🤖 Server Owner Tools</h3>
+        <p style="margin:0 0 12px 0;font-size:0.9rem;opacity:0.8">Automatically set up your server with roles and channels</p>
+        <a href="{{ url_for('setup_bot', slug=server.slug) }}" class="btn" style="background:#F59E0B;color:#000">
+          ⚡ Run Admin Bot
+        </a>
+      </div>
+      {% endif %}
+      <!-- Debug info (remove after testing) -->
+      {% if user %}
+      <details style="margin-top:10px;opacity:0.6;font-size:0.8rem">
+        <summary>Debug Info</summary>
+        <div>Your ID: {{ user.id }}</div>
+        <div>Owner ID: {{ server.owner_id }}</div>
+        <div>Is Member: {{ is_member }}</div>
+        <div>Match: {{ user.id == server.owner_id }}</div>
+      </details>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<script>
+// Channel creation handlers
+document.getElementById('addChannelBtn')?.addEventListener('click', async () => {
+  const name = prompt('Enter channel name:');
+  if (!name) return;
+  
+  const res = await fetch('/api/channel/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      server_slug: '{{ server.slug }}',
+      name: name,
+      is_voice: false
+    })
+  });
+  
+  if (res.ok) {
+    location.reload();
+  } else {
+    const data = await res.json();
+    alert(data.error || 'Failed to create channel');
+  }
+});
+
+document.getElementById('addVoiceBtn')?.addEventListener('click', async () => {
+  const name = prompt('Enter voice channel name:');
+  if (!name) return;
+  
+  const res = await fetch('/api/channel/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      server_slug: '{{ server.slug }}',
+      name: name,
+      is_voice: true
+    })
+  });
+  
+  if (res.ok) {
+    location.reload();
+  } else {
+    const data = await res.json();
+    alert(data.error || 'Failed to create voice channel');
+  }
+});
+
+// Update voice channel participant counts
+async function updateVoiceCounts() {
+  const res = await fetch('/api/voice/counts/{{ server.slug }}');
+  if (res.ok) {
+    const counts = await res.json();
+    for (const [cid, count] of Object.entries(counts)) {
+      const el = document.getElementById('voice-' + cid);
+      if (el) el.textContent = count > 0 ? count : '';
+    }
+  }
+}
+updateVoiceCounts();
+setInterval(updateVoiceCounts, 5000);
+</script>
+{% endblock %}

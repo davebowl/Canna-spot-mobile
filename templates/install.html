@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.install-card { max-width: 600px; margin: 40px auto; padding: 30px; }
+.install-section { margin: 30px 0; padding: 20px; background: #f5f5f5; border-radius: 8px; }
+.install-section h3 { margin-top: 0; color: #4CAF50; }
+.hidden { display: none !important; }
+label { display: block; margin: 15px 0; }
+label span { display: block; margin-bottom: 5px; font-weight: bold; }
+input[type="text"], input[type="password"], input[type="email"], select { 
+    width: 100%; 
+    padding: 10px; 
+    border: 1px solid #ddd; 
+    border-radius: 4px;
+    font-size: 14px;
+}
+.help-text { font-size: 12px; color: #666; margin-top: 5px; }
+.smtp-provider { 
+    padding: 10px; 
+    background: #e8f5e9; 
+    border-left: 3px solid #4CAF50; 
+    margin: 10px 0;
+    font-size: 13px;
+}
+</style>
+
+<div class="install-card card">
+    <h1>🌿 CannaSpot Installation</h1>
+    <p>Set up your CannaSpot instance. This will create the database and admin account.</p>
+    
+    <form method="post">
+        <!-- Database Configuration -->
+        <div class="install-section">
+            <h3>1️⃣ Database Configuration</h3>
+            <label>
+                <span>Database Engine</span>
+                <select name="engine" id="engine">
+                    <option value="sqlite">SQLite (Recommended for testing)</option>
+                    <option value="mysql">MySQL (Recommended for production)</option>
+                </select>
+            </label>
+            
+            <div id="mysql" class="hidden">
+                <label>
+                    <span>MySQL Host</span>
+                    <input type="text" name="db_host" value="localhost">
+                </label>
+                <label>
+                    <span>Database Name</span>
+                    <input type="text" name="db_name" placeholder="cannaspot">
+                </label>
+                <label>
+                    <span>Database Username</span>
+                    <input type="text" name="db_user" placeholder="cannaspot_user">
+                </label>
+                <label>
+                    <span>Database Password</span>
+                    <input type="password" name="db_pass">
+                </label>
+            </div>
+            
+            <label>
+                <span>Secret Key (Optional)</span>
+                <input type="text" name="secret" placeholder="Auto-generated if left blank">
+                <div class="help-text">Used for session encryption. Leave blank to auto-generate.</div>
+            </label>
+        </div>
+
+        <!-- Email Configuration -->
+        <div class="install-section">
+            <h3>2️⃣ Email Configuration (Optional)</h3>
+            <p style="font-size: 13px; color: #666;">Configure SMTP for user verification and password reset emails. You can skip this and configure later in .env file.</p>
+            
+            <label>
+                <span>SMTP Provider</span>
+                <select name="smtp_provider" id="smtp_provider">
+                    <option value="">Skip (configure later)</option>
+                    <option value="webhost">Web Host SMTP (cPanel, DirectAdmin, etc.)</option>
+                    <option value="sendgrid">SendGrid (Recommended for production)</option>
+                    <option value="gmail">Gmail (Development only)</option>
+                    <option value="mailgun">Mailgun</option>
+                    <option value="ses">Amazon SES</option>
+                    <option value="outlook">Outlook/Hotmail</option>
+                    <option value="custom">Custom SMTP Server</option>
+                </select>
+            </label>
+
+            <div id="smtp_fields" class="hidden">
+                <!-- Web Host Help -->
+                <div id="help_webhost" class="smtp-provider hidden">
+                    <strong>Web Host SMTP (cPanel/DirectAdmin/Plesk):</strong><br>
+                    1. Host: Usually "localhost" or "mail.yourdomain.com"<br>
+                    2. Port: 587 (TLS) or 465 (SSL)<br>
+                    3. Username: Email address (e.g., noreply@yourdomain.com)<br>
+                    4. Password: Email account password<br>
+                    5. Check your hosting control panel for exact settings<br>
+                    <strong>Pros:</strong> Free, no third-party, good for low-volume
+                </div>
+
+                <!-- SendGrid Help -->
+                <div id="help_sendgrid" class="smtp-provider hidden">
+                    <strong>SendGrid Setup:</strong><br>
+                    1. Sign up: <a href="https://signup.sendgrid.com/" target="_blank">signup.sendgrid.com</a><br>
+                    2. Create API Key: Settings → API Keys → Create<br>
+                    3. Use "apikey" as username, API key as password<br>
+                    4. Free tier: 100 emails/day forever
+                </div>
+
+                <!-- Gmail Help -->
+                <div id="help_gmail" class="smtp-provider hidden" style="background: #fff3cd; border-left-color: #ff9800;">
+                    <strong>⚠️ Gmail (Development Only):</strong><br>
+                    1. Enable 2FA: <a href="https://myaccount.google.com/security" target="_blank">myaccount.google.com/security</a><br>
+                    2. App Password: <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a><br>
+                    3. Use 16-character app password (not your Gmail password)<br>
+                    <strong>Not recommended for production!</strong> (500/day limit)
+                </div>
+
+                <!-- Mailgun Help -->
+                <div id="help_mailgun" class="smtp-provider hidden">
+                    <strong>Mailgun Setup:</strong><br>
+                    1. Sign up: <a href="https://www.mailgun.com/" target="_blank">mailgun.com</a><br>
+                    2. Get SMTP credentials from dashboard<br>
+                    3. Free tier: 5,000 emails/month for 3 months
+                </div>
+
+                <!-- Custom fields -->
+                <label>
+                    <span>SMTP Host</span>
+                    <input type="text" name="smtp_host" id="smtp_host" placeholder="smtp.example.com">
+                </label>
+                
+                <label>
+                    <span>SMTP Port</span>
+                    <input type="text" name="smtp_port" id="smtp_port" value="587" placeholder="587">
+                </label>
+                
+                <label>
+                    <span>SMTP Username</span>
+                    <input type="text" name="smtp_user" id="smtp_user" placeholder="your-email@example.com">
+                </label>
+                
+                <label>
+                    <span>SMTP Password</span>
+                    <input type="password" name="smtp_pass" id="smtp_pass" placeholder="Your password or API key">
+                </label>
+                
+                <label>
+                    <span>From Email Address</span>
+                    <input type="email" name="smtp_from" id="smtp_from" placeholder="CannaSpot <noreply@your-domain.com>">
+                    <div class="help-text">Display name and email for outgoing messages</div>
+                </label>
+
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" name="smtp_use_tls" id="smtp_use_tls" checked style="width: auto;">
+                    <span style="margin: 0;">Use TLS (Port 587)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Admin Account -->
+        <div class="install-section">
+            <h3>3️⃣ Site Settings</h3>
+            <label>
+                <span>Site Name</span>
+                <input type="text" name="site_name" value="CannaSpot" placeholder="CannaSpot">
+                <div class="help-text">Name of your community platform</div>
+            </label>
+            <label>
+                <span>Site URL (Optional)</span>
+                <input type="url" name="site_url" placeholder="https://your-domain.com">
+                <div class="help-text">Used in verification emails and links</div>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" name="allow_registration" checked style="width: auto;">
+                <span style="margin: 0;">Allow new user registrations</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" name="require_email_verification" checked style="width: auto;">
+                <span style="margin: 0;">Require email verification for new users</span>
+            </label>
+        </div>
+
+        <!-- Default Server -->
+        <div class="install-section">
+            <h3>4️⃣ Default Server</h3>
+            <p style="font-size: 13px; color: #666;">Create your first Discord-style server (you can add more later)</p>
+            <label>
+                <span>Server Name</span>
+                <input type="text" name="server_name" value="General Community" placeholder="General Community">
+            </label>
+            <label>
+                <span>Default Channels (one per line)</span>
+                <textarea name="default_channels" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;">general
+announcements
+support
+off-topic</textarea>
+                <div class="help-text">Create these text channels in your first server</div>
+            </label>
+        </div>
+
+        <!-- Admin Account -->
+        <div class="install-section">
+            <h3>5️⃣ Administrator Account</h3>
+            <label>
+                <span>Username *</span>
+                <input type="text" name="admin_user" required placeholder="admin">
+            </label>
+            <label>
+                <span>Display Name</span>
+                <input type="text" name="admin_display" placeholder="Administrator">
+            </label>
+            <label>
+                <span>Email Address *</span>
+                <input type="email" name="admin_email" required placeholder="admin@example.com">
+            </label>
+            <label>
+                <span>Password *</span>
+                <input type="password" name="admin_pass" required minlength="6">
+                <div class="help-text">Minimum 6 characters</div>
+            </label>
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%; padding: 15px; font-size: 16px;">
+            🚀 Install CannaSpot
+        </button>
+    </form>
+</div>
+
+<script>
+// Database engine toggle
+const eng = document.getElementById('engine');
+const mysqlWrap = document.getElementById('mysql');
+function toggleMysql() {
+    mysqlWrap.classList.toggle('hidden', eng.value !== 'mysql');
+}
+eng.addEventListener('change', toggleMysql);
+toggleMysql();
+
+// SMTP provider configurations
+const smtpProvider = document.getElementById('smtp_provider');
+const smtpFields = document.getElementById('smtp_fields');
+const smtpHost = document.getElementById('smtp_host');
+const smtpPort = document.getElementById('smtp_port');
+const smtpUser = document.getElementById('smtp_user');
+const smtpFrom = document.getElementById('smtp_from');
+const smtpTls = document.getElementById('smtp_use_tls');
+
+const providers = {
+    webhost: {
+        host: 'localhost',
+        port: '587',
+        user: '',
+        tls: true,
+        help: 'help_webhost'
+    },
+    sendgrid: {
+        host: 'smtp.sendgrid.net',
+        port: '587',
+        user: 'apikey',
+        tls: true,
+        help: 'help_sendgrid'
+    },
+    gmail: {
+        host: 'smtp.gmail.com',
+        port: '587',
+        user: '',
+        tls: true,
+        help: 'help_gmail'
+    },
+    mailgun: {
+        host: 'smtp.mailgun.org',
+        port: '587',
+        user: '',
+        tls: true,
+        help: 'help_mailgun'
+    },
+    ses: {
+        host: 'email-smtp.us-east-1.amazonaws.com',
+        port: '587',
+        user: '',
+        tls: true,
+        help: null
+    },
+    outlook: {
+        host: 'smtp-mail.outlook.com',
+        port: '587',
+        user: '',
+        tls: true,
+        help: null
+    },
+    custom: {
+        host: '',
+        port: '587',
+        user: '',
+        tls: true,
+        help: null
+    }
+};
+
+smtpProvider.addEventListener('change', function() {
+    const provider = this.value;
+    
+    // Hide all help boxes
+    document.querySelectorAll('.smtp-provider').forEach(el => el.classList.add('hidden'));
+    
+    if (!provider) {
+        smtpFields.classList.add('hidden');
+        return;
+    }
+    
+    smtpFields.classList.remove('hidden');
+    
+    if (providers[provider]) {
+        const config = providers[provider];
+        smtpHost.value = config.host;
+        smtpPort.value = config.port;
+        smtpUser.value = config.user;
+        smtpTls.checked = config.tls;
+        
+        // Show help if available
+        if (config.help) {
+            document.getElementById(config.help).classList.remove('hidden');
+        }
+    }
+});
+</script>
+{% endblock %}

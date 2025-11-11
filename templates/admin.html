@@ -1,0 +1,530 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.admin-container{max-width:1400px;margin:0 auto}
+.admin-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab-btn{background:var(--soft);border:1px solid var(--green);color:var(--green);padding:10px 20px;border-radius:8px;cursor:pointer;font-size:1rem;transition:all .2s}
+.tab-btn:hover,.tab-btn.active{background:var(--green);color:#000}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.admin-table{width:100%;border-collapse:collapse;margin:16px 0}
+.admin-table th{background:var(--soft);padding:12px;text-align:left;border:1px solid var(--border-glow)}
+.admin-table td{padding:10px;border:1px solid rgba(0,255,153,.2)}
+.admin-table tr:hover{background:var(--soft)}
+.action-btn{padding:6px 12px;margin:2px;font-size:.85rem;border-radius:6px;min-height:32px}
+.danger{background:#ff3333;color:#fff;border:1px solid #ff6666}
+.danger:hover{background:#cc0000}
+.warning{background:#ff9933;color:#000;border:1px solid #ffaa66}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--soft);border:1px solid var(--green);padding:16px;border-radius:10px;text-align:center}
+.stat-num{font-size:2rem;font-weight:800;color:var(--green);text-shadow:0 0 10px var(--green)}
+.stat-label{opacity:.8;margin-top:4px}
+.flash{padding:12px;margin:12px 0;border-radius:8px;border:1px solid}
+.flash.success{background:rgba(0,255,153,.1);border-color:var(--green);color:var(--green)}
+.flash.warning{background:rgba(255,153,51,.1);border-color:#ff9933;color:#ff9933}
+</style>
+
+<div class="admin-container">
+  <h1>🔧 Admin Control Panel</h1>
+  
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  
+  <!-- Stats Overview -->
+  <div class="stats-grid">
+    {% for label, count in stats.items() %}
+      <div class="stat-card">
+        <div class="stat-num">{{ count }}</div>
+        <div class="stat-label">{{ label|title }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  
+  <!-- Tabs -->
+  <div class="admin-tabs">
+    <button class="tab-btn active" onclick="showTab('users')">👥 Users</button>
+    <button class="tab-btn" onclick="showTab('videos')">🎬 Videos</button>
+    <button class="tab-btn" onclick="showTab('servers')">🌿 Servers</button>
+    <button class="tab-btn" onclick="showTab('sponsors')">💰 Sponsors</button>
+    <button class="tab-btn" onclick="showTab('ads')">📢 Ads</button>
+    <button class="tab-btn" onclick="showTab('emojis')">😀 Emojis</button>
+    <button class="tab-btn" onclick="showTab('messages')">💬 Messages</button>
+  </div>
+  
+  <!-- Users Tab -->
+  <div id="tab-users" class="tab-content active card">
+    <h2>User Management</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Avatar</th>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Admin</th>
+          <th>Status</th>
+          <th>Joined</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for usr in users %}
+        <tr>
+          <td>
+            <img src="{{ usr.avatar or '/static/leaf.png' }}" style="width:40px;height:40px;object-fit:cover;border-radius:50%;border:1px solid var(--green)">
+          </td>
+          <td>{{ usr.id }}</td>
+          <td>{{ usr.username }}</td>
+          <td>{{ usr.email }}</td>
+          <td>{% if usr.is_admin %}✅{% else %}—{% endif %}</td>
+          <td>{{ usr.status or 'offline' }}</td>
+          <td>{{ usr.created_at|date }}</td>
+          <td>
+            {% if not usr.is_admin %}
+              <form method="post" style="display:inline">
+                <input type="hidden" name="action" value="make_admin">
+                <input type="hidden" name="user_id" value="{{ usr.id }}">
+                <button class="btn small action-btn">Make Admin</button>
+              </form>
+            {% else %}
+              {% if usr.id != user.id %}
+                <form method="post" style="display:inline">
+                  <input type="hidden" name="action" value="remove_admin">
+                  <input type="hidden" name="user_id" value="{{ usr.id }}">
+                  <button class="btn small action-btn warning">Remove Admin</button>
+                </form>
+              {% endif %}
+            {% endif %}
+            {% if usr.id != user.id %}
+              <form method="post" style="display:inline" onsubmit="return confirm('Delete user {{ usr.username }}?')">
+                <input type="hidden" name="action" value="delete_user">
+                <input type="hidden" name="user_id" value="{{ usr.id }}">
+                <button class="btn small action-btn danger">Delete</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Videos Tab -->
+  <div id="tab-videos" class="tab-content card">
+    <h2>Video Management</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Thumbnail</th>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Uploader ID</th>
+          <th>Views</th>
+          <th>Uploaded</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in videos %}
+        <tr>
+          <td>
+            <img src="{{ v.thumbnail or '/static/leaf.png' }}" style="width:80px;height:45px;object-fit:cover;border-radius:4px;border:1px solid var(--green)">
+          </td>
+          <td>{{ v.id }}</td>
+          <td><a href="{{ url_for('watch', vid=v.id) }}" target="_blank">{{ v.title }}</a></td>
+          <td>{{ v.uploader_id }}</td>
+          <td>{{ v.view_count or 0 }}</td>
+          <td>{{ v.created_at|date }}</td>
+          <td>
+            <form method="post" style="display:inline" onsubmit="return confirm('Delete video {{ v.title }}?')">
+              <input type="hidden" name="action" value="delete_video">
+              <input type="hidden" name="video_id" value="{{ v.id }}">
+              <button class="btn small action-btn danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Servers Tab -->
+  <div id="tab-servers" class="tab-content card">
+    <h2>Server Management</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Icon</th>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Slug</th>
+          <th>Owner ID</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in servers %}
+        <tr>
+          <td>
+            {% if s.server_icon %}
+            <img src="{{ s.server_icon }}" style="width:40px;height:40px;object-fit:cover;border-radius:50%;border:1px solid var(--green)">
+            {% else %}
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--soft);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:20px">
+              🌿
+            </div>
+            {% endif %}
+          </td>
+          <td>{{ s.id }}</td>
+          <td><a href="{{ url_for('server', slug=s.slug) }}" target="_blank">{{ s.name }}</a></td>
+          <td>{{ s.slug }}</td>
+          <td>{{ s.owner_id }}</td>
+          <td>{{ s.created_at|date }}</td>
+          <td>
+            <form method="post" style="display:inline;margin-right:8px">
+              <input type="hidden" name="action" value="transfer_server">
+              <input type="hidden" name="server_id" value="{{ s.id }}">
+              <input type="number" name="new_owner_id" placeholder="User ID" required style="width:80px;padding:4px">
+              <button class="btn tiny action-btn">Transfer</button>
+            </form>
+            <form method="post" style="display:inline" onsubmit="return confirm('Delete server {{ s.name }}?')">
+              <input type="hidden" name="action" value="delete_server">
+              <input type="hidden" name="server_id" value="{{ s.id }}">
+              <button class="btn small action-btn danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Sponsors Tab -->
+  <div id="tab-sponsors" class="tab-content card">
+    <h2>Sponsor Management</h2>
+    
+    <div class="card" style="margin-bottom:20px;background:rgba(0,255,153,.05)">
+      <h3>Add New Sponsor</h3>
+      <form method="post" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+        <input type="hidden" name="action" value="add_sponsor">
+        <label style="flex:1;min-width:200px">
+          Name
+          <input name="name" required>
+        </label>
+        <label style="flex:1;min-width:200px">
+          URL
+          <input name="url" type="url" required>
+        </label>
+        <button class="btn">Add Sponsor</button>
+      </form>
+    </div>
+    
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>URL</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sp in sponsors %}
+        <tr>
+          <td>{{ sp.id }}</td>
+          <td>{{ sp.name }}</td>
+          <td><a href="{{ sp.url }}" target="_blank">{{ sp.url }}</a></td>
+          <td>{% if sp.active %}✅ Active{% else %}❌ Inactive{% endif %}</td>
+          <td>
+            <form method="post" style="display:inline">
+              <input type="hidden" name="action" value="toggle_sponsor">
+              <input type="hidden" name="sponsor_id" value="{{ sp.id }}">
+              <button class="btn small action-btn">{% if sp.active %}Deactivate{% else %}Activate{% endif %}</button>
+            </form>
+            <form method="post" style="display:inline" onsubmit="return confirm('Delete sponsor {{ sp.name }}?')">
+              <input type="hidden" name="action" value="delete_sponsor">
+              <input type="hidden" name="sponsor_id" value="{{ sp.id }}">
+              <button class="btn small action-btn danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Ads Tab -->
+  <div id="tab-ads" class="tab-content card">
+    <h2>📢 Advertisement Management</h2>
+    
+    <!-- Create Ad Form -->
+    <div class="card" style="margin-bottom:20px;background:rgba(0,255,153,0.05);padding:20px">
+      <h3>➕ Create New Ad</h3>
+      <form method="post" action="{{ url_for('admin_create_ad') }}" enctype="multipart/form-data">
+        <div style="display:grid;gap:14px;margin-top:12px">
+          <div>
+            <label><strong>Title *</strong></label>
+            <input type="text" name="title" required maxlength="200" placeholder="Eye-catching ad title" style="width:100%;margin-top:6px">
+          </div>
+          
+          <div>
+            <label><strong>Content</strong></label>
+            <textarea name="content" rows="3" placeholder="Short description or ad copy (optional)" style="width:100%;margin-top:6px"></textarea>
+            <small style="opacity:0.6;display:block;margin-top:4px">Short text or HTML snippet</small>
+          </div>
+          
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label><strong>Ad Image</strong></label>
+              <input type="file" name="image" accept="image/*" style="margin-top:6px">
+              <small style="opacity:0.6;display:block;margin-top:4px">Recommended: 300x250 or 728x90</small>
+            </div>
+            
+            <div>
+              <label><strong>Placement</strong></label>
+              <select name="placement" style="width:100%;margin-top:6px">
+                <option value="sidebar">Sidebar</option>
+                <option value="feed">Feed</option>
+                <option value="watch">Watch Page</option>
+                <option value="footer">Footer</option>
+              </select>
+            </div>
+          </div>
+          
+          <div>
+            <label><strong>Link URL</strong></label>
+            <input type="url" name="link" placeholder="https://example.com (optional)" style="width:100%;margin-top:6px">
+            <small style="opacity:0.6;display:block;margin-top:4px">Make ad clickable</small>
+          </div>
+          
+          <button type="submit" class="btn green" style="width:fit-content">📢 Create Ad</button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Ads List -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Preview</th>
+          <th>Title</th>
+          <th>Placement</th>
+          <th>Stats</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ad in advertisements %}
+        <tr>
+          <td style="text-align:center">
+            {% if ad.image %}
+              <img src="{{ ad.image }}" style="max-width:120px;max-height:60px;object-fit:contain;border:1px solid var(--border-glow)">
+            {% else %}
+              <div style="background:var(--soft);padding:8px;border-radius:6px;font-size:0.75rem">No image</div>
+            {% endif %}
+          </td>
+          <td>
+            <strong>{{ ad.title }}</strong>
+            {% if ad.content %}
+              <div style="font-size:0.8rem;opacity:0.7;margin-top:4px">{{ ad.content[:50] }}{% if ad.content|length > 50 %}...{% endif %}</div>
+            {% endif %}
+          </td>
+          <td><span style="background:var(--soft);padding:4px 10px;border-radius:6px;font-size:0.85rem">{{ ad.placement }}</span></td>
+          <td style="font-size:0.85rem">
+            <div>👁️ {{ ad.view_count }} views</div>
+            <div>🖱️ {{ ad.click_count }} clicks</div>
+            {% if ad.view_count > 0 %}
+              <div style="opacity:0.6">CTR: {{ "%.1f"|format((ad.click_count / ad.view_count * 100) if ad.view_count else 0) }}%</div>
+            {% endif %}
+          </td>
+          <td>
+            <button class="btn tiny action-btn" onclick="toggleAd({{ ad.id }}, this)" style="{% if ad.is_active %}background:var(--green);color:#000{% else %}opacity:0.5{% endif %}">
+              {% if ad.is_active %}✅ Active{% else %}⏸️ Paused{% endif %}
+            </button>
+          </td>
+          <td>{{ ad.created_at|date }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin_delete_ad', ad_id=ad.id) }}" style="display:inline" onsubmit="return confirm('Delete ad: {{ ad.title }}?')">
+              <button class="btn small action-btn danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align:center;padding:40px;opacity:0.6">
+            No advertisements yet. Create your first ad above! 📢
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Emojis Tab -->
+  <div id="tab-emojis" class="tab-content card">
+    <h2>Custom Emoji Management</h2>
+    
+    <!-- Add Emoji Form -->
+    <div class="card" style="margin-bottom:20px;background:rgba(0,255,153,0.05)">
+      <h3>➕ Add New Emoji</h3>
+      <form method="post" enctype="multipart/form-data" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end">
+        <input type="hidden" name="action" value="add_emoji">
+        <div>
+          <label>Category</label>
+          <select name="emoji_category" style="width:100%">
+            <option value="custom">Custom</option>
+            <option value="smileys">Smileys</option>
+            <option value="cannabis">Cannabis</option>
+            <option value="nature">Nature</option>
+            <option value="food">Food</option>
+            <option value="symbols">Symbols</option>
+          </select>
+        </div>
+        <div>
+          <label>Emoji Character(s)</label>
+          <input type="text" name="emoji_char" placeholder="😀 or 🔥" style="font-size:1.5rem;text-align:center">
+          <small style="opacity:0.6;display:block;margin-top:4px">OR upload image below</small>
+        </div>
+        <div>
+          <label>Upload Emoji Image</label>
+          <input type="file" name="emoji_image" accept="image/png,image/gif,image/webp,image/jpeg">
+          <small style="opacity:0.6;display:block;margin-top:4px">PNG, GIF, or WebP (32x32 recommended)</small>
+        </div>
+        <div>
+          <label>Label (optional)</label>
+          <input type="text" name="emoji_label" placeholder="Fire emoji">
+        </div>
+        <button type="submit" class="btn green">Add Emoji</button>
+      </form>
+      <p style="opacity:0.7;margin-top:8px;font-size:0.9rem">💡 Use Unicode emoji OR upload custom images (PNG/GIF/WebP work best)</p>
+    </div>
+    
+    <!-- Emoji List -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Emoji</th>
+          <th>Category</th>
+          <th>Label</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emoji in custom_emojis %}
+        <tr>
+          <td style="font-size:2rem;text-align:center">
+            {% if emoji.image_path %}
+              <img src="{{ url_for('uploads', filename=emoji.image_path) }}" alt="{{ emoji.label }}" style="width:32px;height:32px;object-fit:contain">
+            {% else %}
+              {{ emoji.emoji_char }}
+            {% endif %}
+          </td>
+          <td>{{ emoji.category }}</td>
+          <td>{{ emoji.label or '-' }}</td>
+          <td>
+            {% if emoji.is_active %}
+              <span style="color:var(--green)">✅ Active</span>
+            {% else %}
+              <span style="opacity:0.5">⏸️ Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="post" style="display:inline">
+              <input type="hidden" name="action" value="toggle_emoji">
+              <input type="hidden" name="emoji_id" value="{{ emoji.id }}">
+              <button class="btn small action-btn warning">{{ 'Disable' if emoji.is_active else 'Enable' }}</button>
+            </form>
+            <form method="post" style="display:inline" onsubmit="return confirm('Delete this emoji?')">
+              <input type="hidden" name="action" value="delete_emoji">
+              <input type="hidden" name="emoji_id" value="{{ emoji.id }}">
+              <button class="btn small action-btn danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;opacity:0.7;padding:20px">No custom emojis yet. Add some above! 🎉</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Messages Tab -->
+  <div id="tab-messages" class="tab-content card">
+    <h2>Recent Messages (Moderation)</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Server</th>
+          <th>Channel</th>
+          <th>Content</th>
+          <th>Time</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for msg, usr, srv, ch in recent_messages %}
+        <tr>
+          <td>{{ msg.id }}</td>
+          <td>{{ usr.username }}</td>
+          <td>{{ srv.name }}</td>
+          <td>{{ ch.name }}</td>
+          <td>{{ msg.content[:100] }}{% if msg.content|length > 100 %}...{% endif %}</td>
+          <td>{{ msg.created_at|date("%b %d, %H:%M") }}</td>
+          <td>
+            <form method="post" style="display:inline" onsubmit="return confirm('Delete this message?')">
+              <input type="hidden" name="action" value="delete_message">
+              <input type="hidden" name="message_id" value="{{ msg.id }}">
+              <button class="btn small action-btn danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function showTab(name) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  
+  // Show selected tab
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+async function toggleAd(adId, btn) {
+  const res = await fetch(`/admin/ad/${adId}/toggle`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'}
+  });
+  if (res.ok) {
+    const data = await res.json();
+    if (data.is_active) {
+      btn.innerHTML = '✅ Active';
+      btn.style.background = 'var(--green)';
+      btn.style.color = '#000';
+      btn.style.opacity = '1';
+    } else {
+      btn.innerHTML = '⏸️ Paused';
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.opacity = '0.5';
+    }
+  }
+}
+</script>
+{% endblock %}

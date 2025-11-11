@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Your Videos</h2>
+  <div class="video-grid">
+    {% for v in videos %}
+    <a class="vcard" href="{{ url_for('watch', vid=v.id) }}">
+      <img class="thumb" src="{{ v.thumbnail or '/static/leaf.png' }}">
+      <div class="vt">{{ v.title }}</div>
+      <div class="meta">{{ v.created_at.strftime('%Y-%m-%d') }}</div>
+    </a>
+    {% else %}
+    <p>You haven't uploaded any videos yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

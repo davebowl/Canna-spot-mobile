@@ -1,0 +1,58 @@
+{# Ad Display Macros - Include in templates to show ads #}
+
+{% macro show_ad(ad, track_view=True) %}
+  <div class="ad-container" data-ad-id="{{ ad.id }}" style="background:var(--soft);border:1px solid var(--border-glow);border-radius:10px;padding:16px;margin:16px 0;overflow:hidden">
+    {% if ad.link %}
+      <a href="{{ ad.link }}" target="_blank" rel="noopener" onclick="trackAdClick({{ ad.id }})" style="text-decoration:none;color:inherit;display:block">
+    {% endif %}
+    
+    {% if ad.image %}
+      <img src="{{ ad.image }}" alt="{{ ad.title }}" style="width:100%;height:auto;border-radius:8px;margin-bottom:12px">
+    {% endif %}
+    
+    <h4 style="margin:0 0 8px 0;color:var(--green);font-size:1rem">{{ ad.title }}</h4>
+    
+    {% if ad.content %}
+      <div style="font-size:0.9rem;opacity:0.9;line-height:1.4">{{ ad.content|safe }}</div>
+    {% endif %}
+    
+    <div style="font-size:0.7rem;opacity:0.5;margin-top:10px;text-align:right">Sponsored</div>
+    
+    {% if ad.link %}
+      </a>
+    {% endif %}
+  </div>
+  
+  {% if track_view %}
+  <script>
+    // Track ad view
+    if (!window.viewedAds) window.viewedAds = new Set();
+    if (!window.viewedAds.has({{ ad.id }})) {
+      window.viewedAds.add({{ ad.id }});
+      fetch('/api/ad/{{ ad.id }}/view', {method: 'POST'}).catch(()=>{});
+    }
+  </script>
+  {% endif %}
+{% endmacro %}
+
+{% macro sidebar_ads_widget() %}
+  {% if sidebar_ads %}
+    <div class="ads-sidebar" style="margin:20px 0">
+      {% for ad in sidebar_ads %}
+        {{ show_ad(ad) }}
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro feed_ad(index=0) %}
+  {% if feed_ads and feed_ads|length > index %}
+    {{ show_ad(feed_ads[index]) }}
+  {% endif %}
+{% endmacro %}
+
+<script>
+function trackAdClick(adId) {
+  fetch(`/api/ad/${adId}/click`, {method: 'POST'}).catch(()=>{});
+}
+</script>

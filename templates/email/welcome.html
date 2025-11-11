@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Welcome to CannaSpot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body style="background:#0b0f0d;color:#e5fff2;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:24px">
+    <div style="max-width:640px;margin:0 auto;background:#0f1714;border:1px solid #17f16933;border-radius:12px;overflow:hidden">
+      <div style="padding:20px 24px;border-bottom:1px solid #17f16922">
+        <h1 style="margin:0;font-size:22px;color:#17f169">Welcome to CannaSpot 🌿</h1>
+        <p style="margin:6px 0 0 0;color:#9feec8">The greatest spot on the net.</p>
+      </div>
+      <div style="padding:20px 24px">
+        <p style="margin:0 0 16px 0">Hey <strong>{{ user.display or user.username }}</strong>,</p>
+        <p style="margin:0 0 16px 0">Thanks for joining CannaSpot — were pumped to have you here.</p>
+        <p style="margin:0 0 16px 0">Here are a few quick links to get rolling:</p>
+        <ul style="margin:0 0 16px 20px;padding:0">
+          <li><a href="{{ site_url }}/" style="color:#17f169;text-decoration:none">See what's new</a></li>
+          <li><a href="{{ site_url }}/servers" style="color:#17f169;text-decoration:none">Join or create a server</a></li>
+          <li><a href="{{ site_url }}/upload" style="color:#17f169;text-decoration:none">Upload your first video</a></li>
+          <li><a href="{{ site_url }}/friends" style="color:#17f169;text-decoration:none">Find friends and start a chat</a></li>
+        </ul>
+        <p style="margin:0 0 16px 0;color:#b2ffe0">If you didnt sign up for CannaSpot, feel free to ignore this email.</p>
+        <p style="margin:24px 0 0 0">Stay lifted,<br/>The CannaSpot Team</p>
+      </div>
+      <div style="padding:16px 24px;border-top:1px solid #17f16922;color:#8bcfab;font-size:12px">
+        <p style="margin:0">&copy; {{ datetime.utcnow().year }} CannaSpot</p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>🔴 Go Live</h2>
+  <p class="info">Start a live stream and connect with your audience in real-time!</p>
+  
+  <form id="liveForm" style="max-width:600px;margin:20px auto">
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:8px;color:var(--green)">Stream Room Name</label>
+      <input type="text" id="roomName" placeholder="my-grow-room" required style="width:100%;padding:12px;background:var(--soft);border:1px solid var(--green);border-radius:8px;color:var(--text)">
+      <small style="opacity:0.7;display:block;margin-top:4px">Choose a unique name for your stream (letters, numbers, hyphens only)</small>
+    </div>
+    
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:8px;color:var(--green)">Stream Title</label>
+      <input type="text" id="streamTitle" placeholder="My Cannabis Grow - Week 5 Flowering" required style="width:100%;padding:12px;background:var(--soft);border:1px solid var(--green);border-radius:8px;color:var(--text)">
+    </div>
+    
+    <div style="margin-bottom:16px">
+      <label style="display:block;margin-bottom:8px;color:var(--green)">Description</label>
+      <textarea id="streamDesc" placeholder="Come watch my plants progress! Feel free to ask questions..." rows="4" style="width:100%;padding:12px;background:var(--soft);border:1px solid var(--green);border-radius:8px;color:var(--text)"></textarea>
+    </div>
+    
+    <div style="margin-bottom:20px;padding:12px;background:rgba(0,255,153,0.1);border:1px solid var(--green);border-radius:8px">
+      <h3 style="margin:0 0 8px 0;font-size:1rem">📋 Quick Tips:</h3>
+      <ul style="margin:0;padding-left:20px;opacity:0.9;font-size:0.9rem">
+        <li>Make sure your camera and microphone are connected</li>
+        <li>Use good lighting so viewers can see clearly</li>
+        <li>Test your setup before going live</li>
+        <li>Share your stream link with friends to invite them</li>
+      </ul>
+    </div>
+    
+    <button type="submit" class="btn green" style="width:100%;padding:16px;font-size:1.1rem">
+      🎥 Start Live Stream
+    </button>
+  </form>
+  
+  <div id="streamLink" style="display:none;margin-top:24px;padding:16px;background:var(--card);border:1px solid var(--green);border-radius:8px;text-align:center">
+    <p style="color:var(--green);font-weight:600;margin-bottom:8px">🔴 You're Live!</p>
+    <p style="margin-bottom:12px">Share this link with your audience:</p>
+    <div style="display:flex;gap:8px;max-width:500px;margin:0 auto">
+      <input type="text" id="shareUrl" readonly style="flex:1;padding:10px;background:var(--soft);border:1px solid var(--border-glow);border-radius:6px;color:var(--text)">
+      <button onclick="copyLink()" class="btn ghost">📋 Copy</button>
+    </div>
+    <button onclick="endStream()" class="btn danger" style="margin-top:16px">⏹️ End Stream</button>
+  </div>
+</section>
+
+<script>
+document.getElementById('liveForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const roomName = document.getElementById('roomName').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const title = document.getElementById('streamTitle').value.trim();
+  const desc = document.getElementById('streamDesc').value.trim();
+  
+  if (!roomName || !title) {
+    alert('Please fill in room name and title');
+    return;
+  }
+  
+  // Build stream URL
+  const streamUrl = `${window.location.origin}/video/${roomName}`;
+  
+  // Show share link
+  document.getElementById('shareUrl').value = streamUrl;
+  document.getElementById('streamLink').style.display = 'block';
+  document.getElementById('liveForm').style.display = 'none';
+  
+  // Redirect to video chat room
+  setTimeout(() => {
+    window.location.href = streamUrl;
+  }, 2000);
+});
+
+function copyLink() {
+  const input = document.getElementById('shareUrl');
+  input.select();
+  document.execCommand('copy');
+  alert('✅ Link copied to clipboard!');
+}
+
+function endStream() {
+  if (confirm('Are you sure you want to end your stream?')) {
+    window.location.href = '{{ url_for("recent") }}';
+  }
+}
+</script>
+
+<style>
+.info {
+  text-align: center;
+  opacity: 0.9;
+  margin-bottom: 24px;
+}
+</style>
+{% endblock %}

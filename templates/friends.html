@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Friends</h2>
+  
+  {% if pending %}
+  <section style="margin-bottom:20px">
+    <h3>Friend Requests</h3>
+    {% for u, friendship in pending %}
+    <div class="friend-request" style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(0,255,153,.08);border:1px solid rgba(0,255,153,.3);border-radius:8px;margin:8px 0">
+      <img src="{{ u.avatar or '/static/leaf.png' }}" style="width:48px;height:48px;border-radius:50%;border:1px solid var(--green)">
+      <div style="flex:1">
+        <strong>{{ u.username }}</strong>
+        <div class="tiny">Sent {{ friendship.requested_at|date }}</div>
+      </div>
+      <button class="btn" onclick="acceptFriend({{ friendship.id }})">Accept</button>
+      <button class="btn ghost" onclick="removeFriend({{ u.id }})">Decline</button>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+  
+  <section>
+    <h3>Your Friends ({{ friends|length }})</h3>
+    <div class="friends-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:12px">
+      {% for friend in friends %}
+      <div class="friend-card" data-user-id="{{ friend.id }}" style="background:rgba(0,255,153,.08);border:1px solid rgba(0,255,153,.3);border-radius:12px;padding:16px;text-align:center">
+        <div style="position:relative;width:64px;height:64px;margin:0 auto 8px">
+          <img src="{{ friend.avatar or '/static/leaf.png' }}" style="width:64px;height:64px;border-radius:50%;border:2px solid var(--green)">
+          <div class="presence-dot" style="position:absolute;bottom:2px;right:2px;width:18px;height:18px;border-radius:50%;border:3px solid rgba(0,25,10,.7);
+                      background:{% if friend.status == 'online' %}#00ff99{% elif friend.status == 'too_stoned' %}#ff00ff{% else %}#666{% endif %}">
+          </div>
+        </div>
+        <div style="font-weight:600;margin-bottom:4px">{{ friend.username }}</div>
+        <div class="presence-text" style="font-size:.85rem;color:#888;margin-bottom:8px">
+          {% if friend.status == 'online' %}🟢 Online{% elif friend.status == 'too_stoned' %}🟣 Too Stoned{% else %}⚫ Offline{% endif %}
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+          <a href="{{ url_for('messages', friend_id=friend.id) }}" class="btn" style="font-size:.85rem;padding:6px 12px">Message</a>
+          <button class="btn ghost" onclick="removeFriend({{ friend.id }})" style="font-size:.85rem;padding:6px 12px">Remove</button>
+        </div>
+      </div>
+      {% else %}
+      <p style="opacity:.7;grid-column:1/-1">No friends yet. Find users to add as friends!</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<script>
+async function acceptFriend(friendshipId) {
+  try {
+    const res = await fetch(`/api/friend/accept/${friendshipId}`, { method: 'POST' });
+    if(res.ok) {
+      location.reload();
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function removeFriend(friendId) {
+  if(!confirm('Remove this friend?')) return;
+  try {
+    const res = await fetch(`/api/friend/remove/${friendId}`, { method: 'POST' });
+    if(res.ok) {
+      location.reload();
+    }
+  } catch(e) { console.error(e); }
+}
+</script>
+<script>
+// Live presence updates (every 30s)
+async function refreshFriendStatuses(){
+  try{
+    const res = await fetch('/api/friends/status');
+    const data = await res.json();
+    if(!data.success) return;
+    const byId = {};
+    data.friends.forEach(f => { byId[f.id] = f; });
+    document.querySelectorAll('.friend-card').forEach(card =>{
+      const uid = parseInt(card.getAttribute('data-user-id'));
+      const f = byId[uid];
+      if(!f) return;
+      const dot = card.querySelector('.presence-dot');
+      const text = card.querySelector('.presence-text');
+      let color = '#666', label = '⚫ Offline';
+      if(f.status === 'online'){ color = '#00ff99'; label = '🟢 Online'; }
+      else if(f.status === 'too_stoned'){ color = '#ff00ff'; label = '🟣 Too Stoned'; }
+      if(dot) dot.style.background = color;
+      if(text) text.textContent = label;
+    });
+  }catch(e){}
+}
+setInterval(refreshFriendStatuses, 30000);
+refreshFriendStatuses();
+</script>
+{% endblock %}

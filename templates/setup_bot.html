@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="wrap" style="max-width:1000px;margin:0 auto;padding:20px">
+  <div class="card" style="padding:30px">
+    <div style="text-align:center;margin-bottom:30px">
+      <h1 style="margin:0;font-size:2.5rem">🤖 Admin Bot</h1>
+      <p style="opacity:0.8;margin-top:10px">Automatically configure your server with ONE command</p>
+    </div>
+
+    <div style="background:#1a1a1a;border:2px solid #F59E0B;border-radius:12px;padding:20px;margin-bottom:30px">
+      <h3 style="margin:0 0 12px 0;color:#F59E0B">⚠️ Warning</h3>
+      <p style="margin:0;line-height:1.6">
+        This will <strong>DELETE ALL EXISTING CHANNELS AND ROLES</strong> in <strong>{{ server.name }}</strong> 
+        and replace them with a pre-configured template. This action cannot be undone!
+      </p>
+    </div>
+
+    <form method="post" onsubmit="return confirm('⚠️ This will DELETE all existing channels and roles. Continue?')">
+      <h3 style="margin:0 0 16px 0">Choose a Server Template</h3>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:30px">
+        {% for key, tmpl in templates.items() %}
+        <label class="template-card" style="cursor:pointer">
+          <input type="radio" name="template" value="{{ key }}" {% if key == 'general' %}checked{% endif %} style="display:none">
+          <div class="template-content" style="border:2px solid #333;border-radius:10px;padding:20px;transition:all 0.2s">
+            <h4 style="margin:0 0 8px 0;font-size:1.3rem">{{ tmpl.name }}</h4>
+            <div style="font-size:0.85rem;opacity:0.7;margin-bottom:14px">
+              <div>✅ {{ tmpl.roles|length }} Roles</div>
+              <div>📁 {{ tmpl.channels|length }} Categories</div>
+              {% set total_channels = namespace(count=0) %}
+              {% for cat in tmpl.channels %}
+                {% set total_channels.count = total_channels.count + cat.channels|length %}
+              {% endfor %}
+              <div>💬 {{ total_channels.count }} Channels</div>
+            </div>
+            <details style="font-size:0.8rem;opacity:0.8">
+              <summary style="cursor:pointer;margin-bottom:8px">View Details</summary>
+              <div style="margin-top:8px">
+                <strong>Roles:</strong>
+                <ul style="margin:4px 0;padding-left:20px">
+                  {% for role in tmpl.roles %}
+                  <li><span style="color:{{ role.color }}">●</span> {{ role.name }}</li>
+                  {% endfor %}
+                </ul>
+                <strong>Channels:</strong>
+                {% for cat in tmpl.channels %}
+                <div style="margin-top:6px"><em>{{ cat.category }}</em></div>
+                <ul style="margin:2px 0;padding-left:20px">
+                  {% for ch in cat.channels %}
+                  <li>{{ '🔊' if ch.is_voice else '#' }} {{ ch.name }}</li>
+                  {% endfor %}
+                </ul>
+                {% endfor %}
+              </div>
+            </details>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center">
+        <button type="submit" class="btn green" style="font-size:1.1rem;padding:14px 30px">
+          🚀 Run Admin Bot
+        </button>
+        <a href="{{ url_for('server', slug=server.slug) }}" class="btn ghost" style="padding:14px 30px">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</section>
+
+<style>
+.template-card input:checked + .template-content {
+  border-color: #4CAF50 !important;
+  background: rgba(76, 175, 80, 0.1);
+}
+.template-card:hover .template-content {
+  border-color: #555;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+</style>
+{% endblock %}

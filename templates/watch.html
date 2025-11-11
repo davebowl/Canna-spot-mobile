@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% import "ads.html" as ads %}
+{% block content %}
+<h1>{{ video.title }}</h1>
+<div class="cannaspot-layout">
+  <div class="player-section">
+    {% if video.filename.startswith('https://www.youtube.com/embed/') or video.filename.startswith('http://www.youtube.com/embed/') %}
+      <!-- YouTube embed -->
+      <iframe 
+        src="{{ video.filename }}" 
+        class="video-player" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen
+        style="width:100%;aspect-ratio:16/9;border-radius:8px">
+      </iframe>
+    {% else %}
+      <!-- Local video file with enhanced controls -->
+      <video id="videoPlayer" controls poster="{{ video.thumbnail or '/static/leaf.png' }}" src="{{ video.filename }}" class="video-player"></video>
+      
+      <!-- Enhanced Video Controls -->
+      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+        <div>
+          <label style="font-size:0.9rem;opacity:0.8">Playback Speed:</label>
+          <select id="speedControl" style="padding:6px;background:var(--soft);border:1px solid var(--green);border-radius:4px;color:var(--text)">
+            <option value="0.25">0.25x</option>
+            <option value="0.5">0.5x</option>
+            <option value="0.75">0.75x</option>
+            <option value="1" selected>Normal</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2">2x</option>
+          </select>
+        </div>
+        <button id="fullscreenBtn" class="btn ghost" style="padding:8px 16px">⛶ Fullscreen</button>
+        <button id="downloadBtn" class="btn ghost" style="padding:8px 16px">⬇ Download</button>
+      </div>
+    {% endif %}
+    {% if video.uploader_id and user %}
+    <div class="channel-info">
+      <button id="subBtn" class="btn" data-uid="{{ video.uploader_id }}">🔔 Subscribe</button>
+    </div>
+    {% endif %}
+    <div class="video-details">
+      <h1 class="video-title">{{ video.title }}</h1>
+      <div class="video-meta">
+        <span>👁️ {{ video.view_count or 0 }} views</span>
+        <span style="margin-left:15px">Uploaded {{ video.created_at|date }}</span>
+      </div>
+      <div class="video-actions">
+        <button id="likeBtn" class="btn green" data-vid="{{ video.id }}">👍 Like</button>
+        <button id="laterBtn" class="btn ghost" data-vid="{{ video.id }}">⏰ Watch Later</button>
+        <div class="dropdown" style="position:relative;display:inline-block">
+          <button id="playlistToggle" class="btn ghost" onclick="togglePlaylistMenu()">📋 Add to Playlist</button>
+          <div id="playlistMenu" class="playlist-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:220px;z-index:20">
+            {% if user %}
+            <div style="margin-bottom:6px">
+              <a href="{{ url_for('create_playlist') }}" class="menu-item" style="display:block">+ New Playlist</a>
+            </div>
+            <div id="userPlaylists" class="menu-list"></div>
+            {% else %}
+            <p style="margin:0"><a href="{{ url_for('login') }}">Login</a> to add to playlists</p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="dropdown" style="position:relative;display:inline-block">
+          <button id="shareToggle" class="btn ghost" onclick="toggleShareMenu()">📤 Share</button>
+          <div id="shareMenu" class="share-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:260px;z-index:20">
+            <div class="menu-item" onclick="shareNative()">📱 Share from your device</div>
+            <div class="menu-item" onclick="copyShareLink()">🔗 Copy link</div>
+            <hr class="menu-sep">
+            <a class="menu-item" target="_blank" rel="noopener" id="shareX">𝕏 Share to X</a>
+            <a class="menu-item" target="_blank" rel="noopener" id="shareFacebook">📘 Share to Facebook</a>
+            <a class="menu-item" target="_blank" rel="noopener" id="shareReddit">👽 Share to Reddit</a>
+            <a class="menu-item" target="_blank" rel="noopener" id="shareWhatsApp">🟢 Share to WhatsApp</a>
+            <a class="menu-item" target="_blank" rel="noopener" id="shareTelegram">✈️ Share to Telegram</a>
+            <a class="menu-item" target="_blank" rel="noopener" id="shareEmail">✉️ Share via Email</a>
+          </div>
+        </div>
+      </div>
+      <div class="video-desc">{{ video.description }}</div>
+    </div>
+    <div class="video-comments">
+      <h2>Comments ({{ comments|length }})</h2>
+      {% for comment in comments %}
+      <div class="comment" style="margin-bottom:16px;padding:12px;background:var(--card);border:1px solid var(--border-glow);border-radius:8px">
+        <div class="comment-author" style="font-weight:600;color:var(--green);margin-bottom:4px">{{ comment.author }}</div>
+        <div class="comment-text" style="white-space:pre-wrap;word-break:break-word">{{ comment.text }}</div>
+        <div class="comment-date" style="font-size:0.85rem;opacity:0.7;margin-top:4px">{{ comment.created_at|date("%b %d, %Y at %I:%M %p") }}</div>
+      </div>
+      {% else %}
+      <p style="opacity:0.7;padding:16px 0">No comments yet. Be the first to comment!</p>
+      {% endfor %}
+      {% if user %}
+      <form method="post" class="comment-form" style="margin-top:20px">
+        <div style="position:relative">
+          <textarea id="commentText" name="text" placeholder="Add a comment... 😎" required style="width:100%;min-height:80px;padding:12px;padding-right:50px"></textarea>
+          <button type="button" id="emojiBtn" class="btn ghost" style="position:absolute;right:8px;top:8px;padding:6px 10px;min-height:auto" title="Add emoji">😀</button>
+        </div>
+        <button type="submit" class="btn green" style="margin-top:8px">💬 Post Comment</button>
+      </form>
+      {% else %}
+      <p style="padding:16px 0"><a href="{{ url_for('login') }}" style="color:var(--green)">Log in</a> to comment</p>
+      {% endif %}
+    </div>
+  </div>
+  <aside class="sidebar">
+    {{ ads.feed_ad(0) }}
+    
+    <h3>Related Videos</h3>
+    {% for v in related %}
+    <a href="{{ url_for('watch', vid=v.id) }}" class="related-item">
+      <img src="{{ v.thumbnail or '/static/leaf.png' }}" class="related-thumb" alt="{{ v.title }}">
+      <div class="related-title">{{ v.title }}</div>
+    </a>
+    {% endfor %}
+    
+    {{ ads.sidebar_ads_widget() }}
+  </aside>
+</div>
+<script>
+/* Playlist dropdown minimal styles (inline to keep scope local) */
+</script>
+<style>
+.playlist-menu { box-shadow: 0 8px 24px rgba(0,0,0,.4); backdrop-filter: blur(4px); }
+.playlist-menu .menu-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--text);
+  border: 1px solid transparent;
+  margin: 4px 0;
+  cursor: pointer;
+}
+.playlist-menu .menu-item:hover { background: var(--card); border-color: var(--green); }
+/* Share menu styling reuses menu-item */
+.share-menu { box-shadow: 0 8px 24px rgba(0,0,0,.4); backdrop-filter: blur(4px); }
+.share-menu .menu-item {padding:8px 10px;border-radius:6px;color:var(--text);border:1px solid transparent;margin:4px 0;cursor:pointer;display:block;text-decoration:none}
+.share-menu .menu-item:hover {background:var(--card);border-color:var(--green)}
+.share-menu .menu-sep {border:none;border-top:1px solid var(--green);margin:6px 0;opacity:.4}
+@media (max-width: 980px) {
+  /* Mobile bottom sheet style */
+  .playlist-menu {
+    position: fixed !important;
+    left: 0; right: 0; bottom: 0;
+    top: auto;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 12px !important;
+    max-height: 60vh; overflow-y: auto;
+    z-index: 2000;
+  }
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const likeBtn = document.getElementById('likeBtn');
+  const laterBtn = document.getElementById('laterBtn');
+  const subBtn = document.getElementById('subBtn');
+  const videoPlayer = document.getElementById('videoPlayer');
+  const speedControl = document.getElementById('speedControl');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  
+  // Playback speed control
+  speedControl?.addEventListener('change', (e) => {
+    if(videoPlayer) {
+      videoPlayer.playbackRate = parseFloat(e.target.value);
+    }
+  });
+  
+  // Fullscreen
+  fullscreenBtn?.addEventListener('click', () => {
+    if(videoPlayer) {
+      if(videoPlayer.requestFullscreen) {
+        videoPlayer.requestFullscreen();
+      } else if(videoPlayer.webkitRequestFullscreen) {
+        videoPlayer.webkitRequestFullscreen();
+      } else if(videoPlayer.msRequestFullscreen) {
+        videoPlayer.msRequestFullscreen();
+      }
+    }
+  });
+  
+  // Download
+  downloadBtn?.addEventListener('click', () => {
+    if(videoPlayer) {
+      const link = document.createElement('a');
+      link.href = videoPlayer.src;
+      link.download = '{{ video.title }}'.replace(/[^a-z0-9]/gi, '_') + '.mp4';
+      link.click();
+    }
+  });
+  
+  likeBtn?.addEventListener('click', async ()=>{
+    const vid = likeBtn.dataset.vid;
+    const res = await fetch(`/api/like/${vid}`, {method:'POST'});
+    const data = await res.json();
+    if(data.success) { likeBtn.textContent = '👍 Liked'; likeBtn.disabled=true; }
+    else alert(data.error || 'Error');
+  });
+  
+  laterBtn?.addEventListener('click', async ()=>{
+    const vid = laterBtn.dataset.vid;
+    const res = await fetch(`/api/watch-later/${vid}`, {method:'POST'});
+    const data = await res.json();
+    if(data.success) { laterBtn.textContent = '⏰ Saved'; laterBtn.disabled=true; }
+    else alert(data.error || 'Error');
+  });
+  
+  subBtn?.addEventListener('click', async ()=>{
+    const uid = subBtn.dataset.uid;
+    const res = await fetch(`/api/subscribe/${uid}`, {method:'POST'});
+    const data = await res.json();
+    if(data.success) { subBtn.textContent = '🔔 Subscribed'; subBtn.classList.remove('ghost'); subBtn.classList.add('green'); subBtn.disabled=true; }
+    else alert(data.error || 'Error');
+  });
+  
+  // Emoji picker for comments (using existing emoji.js)
+  const emojiBtn = document.getElementById('emojiBtn');
+  const commentText = document.getElementById('commentText');
+  if(emojiBtn && commentText && window.addEmojiPicker) {
+    window.addEmojiPicker(emojiBtn, commentText);
+  }
+  
+  // Load user playlists
+  loadUserPlaylists();
+  // Close on outside click
+  document.addEventListener('click', (e)=>{
+    const menu = document.getElementById('playlistMenu');
+    const shareMenu = document.getElementById('shareMenu');
+    const toggle = document.getElementById('playlistToggle');
+    const shareToggle = document.getElementById('shareToggle');
+    if(menu && menu.style.display === 'block'){
+      if(!menu.contains(e.target) && !toggle.contains(e.target)){
+        menu.style.display = 'none';
+      }
+    }
+    if(shareMenu && shareMenu.style.display === 'block'){
+      if(!shareMenu.contains(e.target) && !shareToggle.contains(e.target)){
+        shareMenu.style.display = 'none';
+      }
+    }
+  });
+});
+
+function togglePlaylistMenu() {
+  const menu = document.getElementById('playlistMenu');
+  // Close share if open
+  const share = document.getElementById('shareMenu');
+  if(share) share.style.display='none';
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleShareMenu(){
+  const share = document.getElementById('shareMenu');
+  const playlist = document.getElementById('playlistMenu');
+  if(playlist) playlist.style.display='none';
+  share.style.display = share.style.display === 'none' ? 'block' : 'none';
+}
+
+async function loadUserPlaylists() {
+  const container = document.getElementById('userPlaylists');
+  if (!container) return;
+  
+  const res = await fetch('/api/playlists');
+  const data = await res.json();
+  
+  if (data.playlists && data.playlists.length > 0) {
+    container.innerHTML = data.playlists.map(p => 
+      `<div class="menu-item" onclick="addToPlaylist(${p.id}, '${p.name}')">${p.name}</div>`
+    ).join('');
+  } else {
+    container.innerHTML = '<p style="margin:0;font-size:0.9rem;opacity:0.7">No playlists yet</p>';
+  }
+}
+
+async function addToPlaylist(pid, name) {
+  const vid = {{ video.id }}; // jinja injects numeric id directly
+  const res = await fetch(`/api/playlist/${pid}/add/${vid}`, {method: 'POST'});
+  const data = await res.json();
+  if (data.success) {
+    alert(`Added to ${name}!`);
+    document.getElementById('playlistMenu').style.display = 'none';
+  } else {
+    alert(data.error || 'Failed to add to playlist');
+  }
+}
+
+// ---- Share Helpers ----
+const shareUrl = window.location.href;
+const shareTitle = {{ video.title|tojson }};
+
+function setupShareLinks(){
+  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedTitle = encodeURIComponent(shareTitle);
+  const map = {
+    shareX: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
+    shareFacebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+    shareReddit: `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodedTitle}`,
+    shareWhatsApp: `https://api.whatsapp.com/send?text=${encodedTitle}%20${encodedUrl}`,
+    shareTelegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
+    shareEmail: `mailto:?subject=${encodedTitle}&body=${encodedTitle}%0A${encodedUrl}`
+  };
+  for(const id in map){
+    const el = document.getElementById(id);
+    if(el) el.href = map[id];
+  }
+}
+setupShareLinks();
+
+function shareNative(){
+  if(navigator.share){
+    navigator.share({title: shareTitle, url: shareUrl}).catch(()=>{});
+    document.getElementById('shareMenu').style.display='none';
+  } else {
+    alert('Native share not supported on this device. Use Copy Link instead.');
+  }
+}
+
+async function copyShareLink(){
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    const btn = document.getElementById('shareToggle');
+    btn.textContent='✅ Copied';
+    setTimeout(()=>{ btn.textContent='📤 Share'; },1500);
+  } catch(e){
+    alert('Copy failed');
+  }
+  document.getElementById('shareMenu').style.display='none';
+}
+</script>
+{% endblock %}

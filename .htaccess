@@ -1,0 +1,87 @@
+# .htaccess for LiteSpeed Web Server
+# CannaSpot v3.6 - Production Configuration
+
+# Disable directory listing
+Options -Indexes
+
+# Enable Rewrite Engine
+RewriteEngine On
+RewriteBase /
+
+# ============================================
+# Force HTTPS (uncomment for production)
+# ============================================
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ============================================
+# Serve Static Files Directly
+# ============================================
+RewriteCond %{REQUEST_URI} ^/static/ [OR]
+RewriteCond %{REQUEST_URI} ^/uploads/
+RewriteRule ^ - [L]
+
+# ============================================
+# Route All Other Requests to WSGI
+# ============================================
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /wsgi.py/$1 [QSA,L]
+
+# ============================================
+# LiteSpeed Cache Configuration
+# ============================================
+<IfModule LiteSpeed>
+    # Enable cache lookup
+    CacheLookup on
+    
+    # Cache static assets (30 days)
+    <FilesMatch "\.(jpg|jpeg|png|gif|ico|css|js|mp4|webm|woff|woff2|ttf)$">
+        Header set Cache-Control "max-age=2592000, public"
+    </FilesMatch>
+    
+    # Don't cache dynamic content
+    RewriteRule ^(api|admin|login|register|upload) - [E=Cache-Control:no-cache]
+</IfModule>
+
+# ============================================
+# Security Headers
+# ============================================
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ============================================
+# Gzip Compression
+# ============================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+
+# ============================================
+# Protect Sensitive Files
+# ============================================
+<FilesMatch "^\.env|^\.git|^\.ht|\.db$|\.py$|requirements\.txt$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ============================================
+# Upload Directory Security
+# ============================================
+<Directory "uploads">
+    Options -Indexes -ExecCGI
+    <FilesMatch "\.(php|phtml|php3|php4|php5|pl|py|jsp|asp|sh|cgi)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</Directory>
+
+# ============================================
+# Error Pages (optional)
+# ============================================
+# ErrorDocument 404 /404.html
+# ErrorDocument 500 /500.html

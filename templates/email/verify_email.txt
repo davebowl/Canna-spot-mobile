@@ -1,0 +1,12 @@
+Hey {{ user.display or user.username }},
+
+Verify your email to unlock full CannaSpot features.
+
+Click this link:
+{{ verify_link }}
+
+This link expires in 3 days.
+If you did not sign up, ignore this email.
+
+Stay lifted,
+CannaSpot 🌿

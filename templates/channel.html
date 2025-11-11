@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="discord-layout">
+  <!-- Server channels sidebar -->
+  <div class="server-channels">
+    <div class="server-header">
+      <h2>{{ server.name }}</h2>
+    </div>
+    
+    <div class="channel-groups">
+      {% set categories = {} %}
+      {% for channel in channels %}
+        {% set cat = channel.category or 'TEXT CHANNELS' %}
+        {% if cat not in categories %}{% set _ = categories.__setitem__(cat, []) %}{% endif %}
+        {% set _ = categories[cat].append(channel) %}
+      {% endfor %}
+      
+      {% for category, cat_channels in categories.items() %}
+      <div class="channel-group">
+        <div class="group-header">
+          <svg class="arrow" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5H7z"/></svg>
+          <span>{{ category }}</span>
+          {% if user and loop.first %}
+          <button class="add-channel" onclick="createChannel(false)" title="Create Channel">+</button>
+          {% endif %}
+        </div>
+        <div class="channel-list">
+          {% for channel in cat_channels if not channel.is_voice %}
+            <a href="{{ url_for('channel', slug=server.slug, cid=channel.id) }}" 
+               class="channel-item {% if channel.id == ch.id %}active{% endif %}">
+              <svg class="channel-hash" viewBox="0 0 24 24"><path fill="currentColor" d="M5.88 4.12L13.76 12l-7.88 7.88L8 22l10-10L8 2z"/></svg>
+              <span>{{ channel.name }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      
+      <!-- Voice Channels -->
+      {% set voice_channels = channels|selectattr('is_voice')|list %}
+      {% if voice_channels %}
+      <div class="channel-group">
+        <div class="group-header">
+          <svg class="arrow" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5H7z"/></svg>
+          <span>VOICE CHANNELS</span>
+        </div>
+        <div class="channel-list">
+          {% for channel in voice_channels %}
+            <a href="{{ url_for('voice_channel', slug=server.slug, cid=channel.id) }}" class="channel-item">
+              🔊 {{ channel.name }}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+<script>
+function createChannel(isVoice) {
+  const name = prompt('Enter channel name:');
+  if (!name) return;
+  fetch('/api/channel/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      server_slug: '{{ server.slug }}',
+      name: name,
+      is_voice: isVoice
+    })
+  }).then(res => res.ok ? location.reload() : res.json().then(d => alert(d.error || 'Failed')));
+}
+</script>
+
+    <div class="server-info">
+      <div class="member-count">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span>Online members</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message area -->
+  <div class="message-area">
+    <div class="message-header">
+      <h2>
+        <svg class="channel-hash" viewBox="0 0 24 24"><path fill="currentColor" d="M5.88 4.12L13.76 12l-7.88 7.88L8 22l10-10L8 2z"/></svg>
+        {{ ch.name }}
+      </h2>
+    </div>
+
+    <div class="messages">
+      {% for m, u in msgs %}
+      <div class="message">
+        <div class="message-meta">
+          <img src="{{ u.avatar or '/static/avatar.png' }}" class="avatar" width="40" height="40">
+          <span class="message-author">{{ u.display }}</span>
+          <span class="message-time">{{ m.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
+        </div>
+        <div class="message-content">{{ m.content }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if user %}
+    <form method="post" class="message-form">
+      <input type="text" 
+             name="content" 
+             class="message-input" 
+             placeholder="Message #{{ ch.name }}..." 
+             autocomplete="off">
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

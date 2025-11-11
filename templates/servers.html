@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+    <h2>Grow Servers</h2>
+    {% if user %}
+    <a href="{{ url_for('create_server') }}" class="btn green">+ Create Server</a>
+    {% endif %}
+  </div>
+  
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px">
+    {% for s in servers %}
+    <a href="{{ url_for('server', slug=s.slug) }}" class="server-card" style="display:block;text-decoration:none;background:var(--soft);border:1px solid var(--border-glow);border-radius:12px;padding:20px;text-align:center;transition:all 0.2s">
+      {% if s.server_icon %}
+      <img src="{{ s.server_icon }}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid var(--green);margin:0 auto 12px">
+      {% else %}
+      <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--soft),var(--green));border:2px solid var(--green);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:bold;color:var(--bg)">
+        {{ s.name[:1] }}
+      </div>
+      {% endif %}
+      <h3 style="margin:0 0 8px 0;color:var(--green)">{{ s.name }}</h3>
+      <div class="meta">Created {{ s.created_at.strftime('%b %d, %Y') }}</div>
+    </a>
+    {% else %}
+    <p style="grid-column:1/-1;text-align:center;opacity:0.7">
+      No servers yet. {% if user %}<a href="{{ url_for('create_server') }}">Create the first one!</a>{% endif %}
+    </p>
+    {% endfor %}
+  </div>
+</section>
+
+<style>
+.server-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,255,153,0.2);
+  border-color: var(--green);
+}
+</style>
+{% endblock %}

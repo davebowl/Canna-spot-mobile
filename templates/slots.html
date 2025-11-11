@@ -1,0 +1,1215 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="casino-container">
+  <div class="casino-header">
+    <h1>🎰 CannaSpot Casino</h1>
+    <div class="player-info">
+      <div class="balance">
+        <span class="balance-label">Balance:</span>
+        <span class="balance-amount" id="balance">$5000</span>
+      </div>
+      <button id="btnBank" class="btn green">🏦 Bank</button>
+    </div>
+  </div>
+
+  <div class="games-grid">
+    <div class="game-card" onclick="loadGame('classic')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+        <div class="game-icon">🎰</div>
+      </div>
+      <h3>Classic Slots</h3>
+      <p>Traditional 3-reel slot machine</p>
+      <span class="min-bet">Min Bet: $10</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('jackpot')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+        <div class="game-icon">💎</div>
+      </div>
+      <h3>Diamond Jackpot</h3>
+      <p>5-reel progressive jackpot</p>
+      <span class="min-bet">Min Bet: $25</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('420')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)">
+        <div class="game-icon">🌿</div>
+      </div>
+      <h3>420 Fortune</h3>
+      <p>Cannabis-themed mega wins</p>
+      <span class="min-bet">Min Bet: $50</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('mega')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)">
+        <div class="game-icon">🔥</div>
+      </div>
+      <h3>Mega Fire</h3>
+      <p>Hot streak multipliers</p>
+      <span class="min-bet">Min Bet: $20</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('lucky7')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #ee5a6f 0%, #f29263 100%)">
+        <div class="game-icon">7️⃣</div>
+      </div>
+      <h3>Lucky Sevens</h3>
+      <p>Classic 777 jackpot</p>
+      <span class="min-bet">Min Bet: $15</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('fruity')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%)">
+        <div class="game-icon">🍒</div>
+      </div>
+      <h3>Fruit Frenzy</h3>
+      <p>Juicy fruit combos</p>
+      <span class="min-bet">Min Bet: $5</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('breakbank')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">
+        <div class="game-icon">🏦</div>
+      </div>
+      <h3>Break the Bank</h3>
+      <p>Vault raid mega jackpots</p>
+      <span class="min-bet">Min Bet: $100</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('huffpuff')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #834d9b 0%, #d04ed6 100%)">
+        <div class="game-icon">💨</div>
+      </div>
+      <h3>Huff & Puff</h3>
+      <p>Smoke clouds and cash</p>
+      <span class="min-bet">Min Bet: $25</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('money')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%)">
+        <div class="game-icon">💵</div>
+      </div>
+      <h3>Money Rain</h3>
+      <p>Cash falling from the sky</p>
+      <span class="min-bet">Min Bet: $30</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('poker')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)">
+        <div class="game-icon">🃏</div>
+      </div>
+      <h3>Video Poker</h3>
+      <p>Jacks or Better poker</p>
+      <span class="min-bet">Min Bet: $5</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('wheel')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%)">
+        <div class="game-icon">🎡</div>
+      </div>
+      <h3>Lucky Wheel</h3>
+      <p>Spin the fortune wheel</p>
+      <span class="min-bet">Min Bet: $20</span>
+    </div>
+
+    <div class="game-card" onclick="loadGame('blackjack')">
+      <div class="game-thumb" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)">
+        <div class="game-icon">🎴</div>
+      </div>
+      <h3>Blackjack</h3>
+      <p>Beat the dealer to 21</p>
+      <span class="min-bet">Min Bet: $10</span>
+    </div>
+  </div>
+
+  <!-- Game Modal -->
+  <div id="gameModal" class="game-modal" style="display:none">
+    <div class="game-modal-content">
+      <div class="game-modal-header">
+        <h2 id="gameTitle">Game</h2>
+        <button class="btn-close" onclick="closeGame()">✕</button>
+      </div>
+      <div id="gameContent" class="game-content">
+        <!-- Game will load here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Bank Modal -->
+  <div id="bankModal" class="bank-modal" style="display:none">
+    <div class="bank-modal-content">
+      <h2>🏦 Bank</h2>
+      <div class="bank-options">
+        <button class="btn green" onclick="addMoney(1000)">Add $1,000</button>
+        <button class="btn green" onclick="addMoney(5000)">Add $5,000</button>
+        <button class="btn green" onclick="addMoney(10000)">Add $10,000</button>
+        <button class="btn ghost" onclick="resetBalance()">Reset Balance</button>
+      </div>
+      <button class="btn ghost" onclick="closeBankModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.casino-container{max-width:1200px;margin:0 auto;padding:24px}
+.casino-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;padding:24px;background:var(--card);border-radius:16px;border:2px solid var(--green)}
+.casino-header h1{margin:0;font-size:36px;background:linear-gradient(45deg,#ffd700,#ffed4e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.player-info{display:flex;align-items:center;gap:16px}
+.balance{padding:12px 24px;background:var(--soft);border-radius:12px}
+.balance-label{font-size:14px;color:var(--text-dim);margin-right:8px}
+.balance-amount{font-size:28px;font-weight:700;color:#ffd700}
+.games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
+.game-card{background:var(--card);border:2px solid var(--border-glow);border-radius:16px;padding:0;cursor:pointer;transition:all .3s;overflow:hidden}
+.game-card:hover{transform:translateY(-8px);border-color:var(--green);box-shadow:0 12px 32px rgba(0,0,0,0.3)}
+.game-thumb{height:180px;display:flex;align-items:center;justify-content:center;position:relative}
+.game-icon{font-size:80px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3))}
+.game-card h3{margin:16px;font-size:20px;color:var(--text)}
+.game-card p{margin:0 16px 8px;font-size:14px;color:var(--text-dim)}
+.min-bet{display:block;margin:0 16px 16px;font-size:12px;color:var(--green);font-weight:700}
+.game-modal,.bank-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center}
+.game-modal-content{background:var(--card);border-radius:16px;width:90%;max-width:1000px;max-height:90vh;overflow:auto}
+.game-modal-header{display:flex;justify-content:space-between;align-items:center;padding:24px;border-bottom:2px solid var(--border-glow)}
+.game-modal-header h2{margin:0;color:var(--green)}
+.btn-close{background:none;border:none;font-size:32px;cursor:pointer;color:var(--text);padding:0 8px}
+.btn-close:hover{color:var(--green)}
+.game-content{padding:32px;min-height:400px}
+.bank-modal-content{background:var(--card);border-radius:16px;padding:32px;max-width:400px}
+.bank-modal-content h2{margin:0 0 24px;text-align:center}
+.bank-options{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+
+/* Slot Game Styles */
+.slot-game{text-align:center;position:relative}
+.slot-reels{display:flex;justify-content:center;gap:16px;margin:32px 0;perspective:1000px}
+.slot-reel{width:140px;height:140px;background:linear-gradient(135deg,#1a1a2e,#16213e);border:4px solid #ffd700;border-radius:16px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;box-shadow:inset 0 4px 12px rgba(0,0,0,0.5),0 0 20px rgba(255,215,0,0.3)}
+.slot-reel.spinning{animation:reelSpin 0.05s linear infinite;box-shadow:inset 0 4px 12px rgba(0,0,0,0.5),0 0 30px rgba(255,215,0,0.6)}
+.slot-symbol{font-size:80px;text-shadow:0 4px 8px rgba(0,0,0,0.5);animation:symbolPop 0.3s ease-out}
+@keyframes reelSpin{0%{transform:rotateX(0deg)}100%{transform:rotateX(360deg)}}
+@keyframes symbolPop{0%{transform:scale(0.5);opacity:0}100%{transform:scale(1);opacity:1}}
+.slot-controls{display:flex;justify-content:center;align-items:center;gap:24px;margin:32px 0}
+.bet-selector{display:flex;align-items:center;gap:12px;padding:16px 24px;background:var(--soft);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+.bet-selector button{width:40px;height:40px;font-size:24px}
+.bet-amount{font-size:24px;font-weight:700;min-width:80px;text-align:center;color:#ffd700;text-shadow:0 2px 4px rgba(0,0,0,0.3)}
+.spin-btn{font-size:28px;padding:20px 60px;font-weight:700;background:linear-gradient(135deg,#667eea,#764ba2);border:none;color:#fff;border-radius:12px;cursor:pointer;transition:all .3s;box-shadow:0 8px 24px rgba(102,126,234,0.4);position:relative;overflow:hidden}
+.spin-btn:hover{transform:scale(1.05);box-shadow:0 12px 32px rgba(102,126,234,0.6)}
+.spin-btn:active{transform:scale(0.98)}
+.spin-btn:disabled{opacity:0.5;cursor:not-allowed;transform:scale(1)}
+.spin-btn::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;border-radius:50%;background:rgba(255,255,255,0.5);transform:translate(-50%,-50%);transition:width 0.6s,height 0.6s}
+.spin-btn:active::before{width:300px;height:300px}
+.win-message{font-size:32px;font-weight:700;color:#ffd700;text-shadow:0 0 20px #ffd700,0 0 40px #ffd700;min-height:40px;margin:16px 0;animation:winPulse 0.5s infinite}
+@keyframes winPulse{0%,100%{transform:scale(1);text-shadow:0 0 20px #ffd700}50%{transform:scale(1.1);text-shadow:0 0 40px #ffd700,0 0 60px #ffd700}}
+.paytable-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px;padding:24px;background:var(--soft);border-radius:12px;box-shadow:inset 0 2px 8px rgba(0,0,0,0.2)}
+.payout-item{padding:12px;background:var(--card);border-radius:8px;text-align:center;transition:all 0.3s}
+.payout-item:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.payout-symbols{font-size:32px;margin-bottom:8px}
+.payout-value{font-size:16px;color:var(--green);font-weight:700}
+
+/* Particle Effects */
+.particle{position:absolute;width:10px;height:10px;border-radius:50%;pointer-events:none;z-index:1000}
+.confetti{position:absolute;width:8px;height:12px;pointer-events:none;z-index:1000;animation:confettiFall 3s linear forwards}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(600px) rotate(720deg);opacity:0}}
+
+/* Glow Effects */
+.slot-reel.win-glow{animation:winGlow 1s ease-in-out 3;border-color:#00ff00}
+@keyframes winGlow{0%,100%{box-shadow:inset 0 4px 12px rgba(0,0,0,0.5),0 0 20px rgba(255,215,0,0.3)}50%{box-shadow:inset 0 4px 12px rgba(0,0,0,0.5),0 0 40px #00ff00,0 0 60px #00ff00}}
+</style>
+
+<script>
+// Sound Effects (using Web Audio API)
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(frequency, duration, type = 'sine') {
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  
+  oscillator.frequency.value = frequency;
+  oscillator.type = type;
+  
+  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+  
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + duration);
+}
+
+function playSpinSound() {
+  playSound(200, 0.1, 'sawtooth');
+}
+
+function playWinSound() {
+  playSound(523.25, 0.2, 'sine'); // C5
+  setTimeout(() => playSound(659.25, 0.2, 'sine'), 100); // E5
+  setTimeout(() => playSound(783.99, 0.3, 'sine'), 200); // G5
+}
+
+function playBigWinSound() {
+  for(let i = 0; i < 5; i++) {
+    setTimeout(() => {
+      playSound(523.25 + (i * 100), 0.2, 'square');
+    }, i * 100);
+  }
+}
+
+// Particle Effects
+function createConfetti(x, y, count = 30) {
+  const colors = ['#ffd700', '#00ff00', '#ff6b6b', '#4facfe', '#f093fb'];
+  for(let i = 0; i < count; i++) {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti';
+    confetti.style.left = x + 'px';
+    confetti.style.top = y + 'px';
+    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    confetti.style.transform = `translateX(${Math.random() * 200 - 100}px)`;
+    document.body.appendChild(confetti);
+    setTimeout(() => confetti.remove(), 3000);
+  }
+}
+
+function createParticles(x, y, count = 20) {
+  for(let i = 0; i < count; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.left = x + 'px';
+    particle.style.top = y + 'px';
+    particle.style.backgroundColor = '#ffd700';
+    
+    const angle = (Math.PI * 2 * i) / count;
+    const velocity = 2 + Math.random() * 3;
+    const tx = Math.cos(angle) * velocity * 50;
+    const ty = Math.sin(angle) * velocity * 50;
+    
+    particle.style.animation = `particleBurst 0.8s ease-out forwards`;
+    particle.style.setProperty('--tx', tx + 'px');
+    particle.style.setProperty('--ty', ty + 'px');
+    
+    document.body.appendChild(particle);
+    setTimeout(() => particle.remove(), 800);
+  }
+}
+
+// Add particle animation
+const style = document.createElement('style');
+style.textContent = `
+@keyframes particleBurst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}`;
+document.head.appendChild(style);
+
+// Helper function for win effects
+function triggerWinEffects(reels, payout, bet) {
+  const win = bet * payout;
+  
+  if(payout >= 100) {
+    // Big win - massive celebration
+    playBigWinSound();
+    const rect = reels[Math.floor(reels.length/2)].getBoundingClientRect();
+    createConfetti(rect.left + rect.width/2, rect.top + rect.height/2, 100);
+    createParticles(rect.left + rect.width/2, rect.top + rect.height/2, 30);
+  } else if(payout >= 20) {
+    // Medium win
+    playWinSound();
+    const rect = reels[Math.floor(reels.length/2)].getBoundingClientRect();
+    createConfetti(rect.left + rect.width/2, rect.top + rect.height/2, 50);
+  } else {
+    // Small win
+    playWinSound();
+  }
+  
+  reels.forEach(r => r.classList.add('win-glow'));
+  setTimeout(() => reels.forEach(r => r.classList.remove('win-glow')), 3000);
+  
+  return win;
+}
+
+let balance = parseInt(localStorage.getItem('casinoBalance')) || 5000;
+let currentGame = null;
+
+function updateBalance(amount) {
+  balance += amount;
+  document.getElementById('balance').textContent = '$' + balance.toLocaleString();
+  localStorage.setItem('casinoBalance', balance);
+}
+
+function addMoney(amount) {
+  updateBalance(amount);
+  closeBankModal();
+}
+
+function resetBalance() {
+  balance = 5000;
+  updateBalance(0);
+  closeBankModal();
+}
+
+document.getElementById('btnBank')?.addEventListener('click', () => {
+  document.getElementById('bankModal').style.display = 'flex';
+});
+
+function closeBankModal() {
+  document.getElementById('bankModal').style.display = 'none';
+}
+
+function loadGame(gameType) {
+  currentGame = gameType;
+  const modal = document.getElementById('gameModal');
+  const title = document.getElementById('gameTitle');
+  const content = document.getElementById('gameContent');
+  
+  switch(gameType) {
+    case 'classic':
+      title.textContent = '🎰 Classic Slots';
+      content.innerHTML = getClassicSlotHTML();
+      initClassicSlot();
+      break;
+    case 'jackpot':
+      title.textContent = '💎 Diamond Jackpot';
+      content.innerHTML = getJackpotSlotHTML();
+      initJackpotSlot();
+      break;
+    case '420':
+      title.textContent = '🌿 420 Fortune';
+      content.innerHTML = get420SlotHTML();
+      init420Slot();
+      break;
+    case 'mega':
+      title.textContent = '🔥 Mega Fire';
+      content.innerHTML = getMegaFireHTML();
+      initMegaFire();
+      break;
+    case 'lucky7':
+      title.textContent = '7️⃣ Lucky Sevens';
+      content.innerHTML = getLucky7HTML();
+      initLucky7();
+      break;
+    case 'fruity':
+      title.textContent = '🍒 Fruit Frenzy';
+      content.innerHTML = getFruityHTML();
+      initFruity();
+      break;
+    case 'breakbank':
+      title.textContent = '🏦 Break the Bank';
+      content.innerHTML = getBreakBankHTML();
+      initBreakBank();
+      break;
+    case 'huffpuff':
+      title.textContent = '💨 Huff & Puff';
+      content.innerHTML = getHuffPuffHTML();
+      initHuffPuff();
+      break;
+    case 'money':
+      title.textContent = '💵 Money Rain';
+      content.innerHTML = getMoneyRainHTML();
+      initMoneyRain();
+      break;
+    case 'poker':
+      title.textContent = '🃏 Video Poker';
+      content.innerHTML = '<div style="text-align:center;padding:80px 0"><img src="https://img.icons8.com/color/200/ashtray.png" style="width:200px;height:200px;object-fit:contain;margin-bottom:24px" alt="Coming Soon"><h2 style="color:var(--green);font-size:32px;margin-bottom:16px">Coming Soon!</h2><p style="color:var(--text-dim);font-size:18px">This game is under development</p></div>';
+      break;
+    case 'wheel':
+      title.textContent = '🎡 Lucky Wheel';
+      content.innerHTML = '<div style="text-align:center;padding:80px 0"><img src="https://img.icons8.com/color/200/ashtray.png" style="width:200px;height:200px;object-fit:contain;margin-bottom:24px" alt="Coming Soon"><h2 style="color:var(--green);font-size:32px;margin-bottom:16px">Coming Soon!</h2><p style="color:var(--text-dim);font-size:18px">This game is under development</p></div>';
+      break;
+    case 'blackjack':
+      title.textContent = '🎴 Blackjack';
+      content.innerHTML = '<div style="text-align:center;padding:80px 0"><img src="https://img.icons8.com/color/200/ashtray.png" style="width:200px;height:200px;object-fit:contain;margin-bottom:24px" alt="Coming Soon"><h2 style="color:var(--green);font-size:32px;margin-bottom:16px">Coming Soon!</h2><p style="color:var(--text-dim);font-size:18px">This game is under development</p></div>';
+      break;
+    default:
+      content.innerHTML = '<div style="text-align:center;padding:80px 0"><img src="https://img.icons8.com/color/200/ashtray.png" style="width:200px;height:200px;object-fit:contain;margin-bottom:24px" alt="Coming Soon"><h2 style="color:var(--green);font-size:32px;margin-bottom:16px">Coming Soon!</h2><p style="color:var(--text-dim);font-size:18px">This game is under development</p></div>';
+  }
+  
+  modal.style.display = 'flex';
+}
+
+function closeGame() {
+  document.getElementById('gameModal').style.display = 'none';
+  currentGame = null;
+}
+
+// Classic Slot Game
+function getClassicSlotHTML() {
+  return `
+    <div class="slot-game">
+      <div class="slot-reels">
+        <div class="slot-reel" id="reel1"><div class="slot-symbol">🍒</div></div>
+        <div class="slot-reel" id="reel2"><div class="slot-symbol">🍋</div></div>
+        <div class="slot-reel" id="reel3"><div class="slot-symbol">💎</div></div>
+      </div>
+      <div class="win-message" id="winMsg"></div>
+      <div class="slot-controls">
+        <div class="bet-selector">
+          <button class="btn ghost" onclick="changeBet(-10)">−</button>
+          <div class="bet-amount" id="betAmount">$10</div>
+          <button class="btn ghost" onclick="changeBet(10)">+</button>
+        </div>
+        <button class="spin-btn" id="spinBtn" onclick="spinClassic()">SPIN 🎰</button>
+      </div>
+      <div class="paytable-mini">
+        <div class="payout-item"><div class="payout-symbols">🍒🍒🍒</div><div class="payout-value">×5</div></div>
+        <div class="payout-item"><div class="payout-symbols">🍋🍋🍋</div><div class="payout-value">×10</div></div>
+        <div class="payout-item"><div class="payout-symbols">🍊🍊🍊</div><div class="payout-value">×15</div></div>
+        <div class="payout-item"><div class="payout-symbols">🍇🍇🍇</div><div class="payout-value">×25</div></div>
+        <div class="payout-item"><div class="payout-symbols">💎💎💎</div><div class="payout-value">×50</div></div>
+        <div class="payout-item"><div class="payout-symbols">7️⃣7️⃣7️⃣</div><div class="payout-value">×100</div></div>
+      </div>
+    </div>
+  `;
+}
+
+let currentBet = 10;
+let spinning = false;
+const symbols = ['🍒', '🍋', '🍊', '🍇', '💎', '7️⃣'];
+const payouts = {'🍒🍒🍒':5,'🍋🍋🍋':10,'🍊🍊🍊':15,'🍇🍇🍇':25,'💎💎💎':50,'7️⃣7️⃣7️⃣':100};
+
+function initClassicSlot() {
+  updateBetDisplay();
+}
+
+function changeBet(amount) {
+  currentBet = Math.max(10, Math.min(1000, currentBet + amount));
+  updateBetDisplay();
+}
+
+function updateBetDisplay() {
+  const el = document.getElementById('betAmount');
+  if(el) el.textContent = '$' + currentBet;
+}
+
+async function spinClassic() {
+  if(spinning || balance < currentBet) return;
+  spinning = true;
+  updateBalance(-currentBet);
+  
+  playSpinSound();
+  
+  const winMsg = document.getElementById('winMsg');
+  winMsg.textContent = '';
+  
+  const reels = [1,2,3].map(i => document.getElementById('reel'+i));
+  reels.forEach(r => r.classList.add('spinning'));
+  
+  // Reel spinning sounds
+  const spinInterval = setInterval(() => playSound(150, 0.05, 'sawtooth'), 50);
+  
+  await new Promise(r => setTimeout(r, 2000));
+  
+  clearInterval(spinInterval);
+  
+  const results = symbols.map(() => symbols[Math.floor(Math.random()*symbols.length)]);
+  reels.forEach((r,i) => {
+    r.classList.remove('spinning');
+    r.querySelector('.slot-symbol').textContent = results[i];
+  });
+  
+  const combo = results.join('');
+  const payout = payouts[combo];
+  
+  if(payout) {
+    const win = currentBet * payout;
+    updateBalance(win);
+    winMsg.textContent = `🎉 WIN $${win.toLocaleString()}! 🎉`;
+    
+    // Sound and visual effects
+    if(payout >= 50) {
+      playBigWinSound();
+      const rect = reels[1].getBoundingClientRect();
+      createConfetti(rect.left + rect.width/2, rect.top + rect.height/2, 50);
+    } else {
+      playWinSound();
+    }
+    
+    reels.forEach(r => {
+      r.classList.add('win-glow');
+      setTimeout(() => r.classList.remove('win-glow'), 3000);
+    });
+  } else {
+    winMsg.textContent = 'Try again!';
+    playSound(100, 0.2, 'triangle');
+  }
+  
+  spinning = false;
+}
+
+// Jackpot Slot (5 reels)
+function getJackpotSlotHTML() {
+  return `
+    <div class="slot-game">
+      <div class="jackpot-display" style="font-size:32px;color:#ffd700;margin-bottom:24px;font-weight:700">JACKPOT: $${Math.floor(balance * 0.5).toLocaleString()}</div>
+      <div class="slot-reels">
+        <div class="slot-reel" id="jr1"><div class="slot-symbol">💎</div></div>
+        <div class="slot-reel" id="jr2"><div class="slot-symbol">💎</div></div>
+        <div class="slot-reel" id="jr3"><div class="slot-symbol">💎</div></div>
+        <div class="slot-reel" id="jr4"><div class="slot-symbol">💎</div></div>
+        <div class="slot-reel" id="jr5"><div class="slot-symbol">💎</div></div>
+      </div>
+      <div class="win-message" id="jWinMsg"></div>
+      <div class="slot-controls">
+        <div class="bet-selector">
+          <button class="btn ghost" onclick="changeJackpotBet(-25)">−</button>
+          <div class="bet-amount" id="jBetAmount">$25</div>
+          <button class="btn ghost" onclick="changeJackpotBet(25)">+</button>
+        </div>
+        <button class="spin-btn" onclick="spinJackpot()">SPIN 💎</button>
+      </div>
+    </div>
+  `;
+}
+
+let jackpotBet = 25;
+const jackpotSymbols = ['💎','⭐','👑','💰','🎰'];
+
+function initJackpotSlot() {
+  updateJackpotBetDisplay();
+}
+
+function changeJackpotBet(amount) {
+  jackpotBet = Math.max(25, Math.min(500, jackpotBet + amount));
+  updateJackpotBetDisplay();
+}
+
+function updateJackpotBetDisplay() {
+  const el = document.getElementById('jBetAmount');
+  if(el) el.textContent = '$' + jackpotBet;
+}
+
+async function spinJackpot() {
+  if(spinning || balance < jackpotBet) return;
+  spinning = true;
+  updateBalance(-jackpotBet);
+  
+  playSpinSound();
+  
+  const winMsg = document.getElementById('jWinMsg');
+  winMsg.textContent = '';
+  
+  const reels = [1,2,3,4,5].map(i => document.getElementById('jr'+i));
+  reels.forEach(r => r.classList.add('spinning'));
+  
+  const spinInterval = setInterval(() => playSound(150, 0.05, 'sawtooth'), 50);
+  
+  await new Promise(r => setTimeout(r, 3000));
+  
+  clearInterval(spinInterval);
+  
+  const results = jackpotSymbols.map(() => jackpotSymbols[Math.floor(Math.random()*jackpotSymbols.length)]);
+  reels.forEach((r,i) => {
+    r.classList.remove('spinning');
+    r.querySelector('.slot-symbol').textContent = results[i];
+  });
+  
+  // Check for wins
+  const allSame = results.every(s => s === results[0]);
+  if(allSame) {
+    const jackpotWin = Math.floor(balance * 0.5);
+    updateBalance(jackpotWin);
+    winMsg.textContent = `🎊 JACKPOT! $${jackpotWin.toLocaleString()}! 🎊`;
+    playBigWinSound();
+    const rect = reels[2].getBoundingClientRect();
+    createConfetti(rect.left + rect.width/2, rect.top + rect.height/2, 100);
+    reels.forEach(r => r.classList.add('win-glow'));
+    setTimeout(() => reels.forEach(r => r.classList.remove('win-glow')), 3000);
+  } else {
+    const matchCount = results.filter(s => s === results[0]).length;
+    if(matchCount >= 3) {
+      const win = jackpotBet * matchCount * 5;
+      updateBalance(win);
+      winMsg.textContent = `💰 WIN $${win.toLocaleString()}!`;
+      playWinSound();
+      reels.forEach(r => r.classList.add('win-glow'));
+      setTimeout(() => reels.forEach(r => r.classList.remove('win-glow')), 3000);
+    } else {
+      playSound(100, 0.2, 'triangle');
+    }
+  }
+  
+  spinning = false;
+}
+
+// 420 Fortune Slot
+function get420SlotHTML() {
+  return `
+    <div class="slot-game">
+      <div class="slot-reels">
+        <div class="slot-reel" id="c1"><div class="slot-symbol">🌿</div></div>
+        <div class="slot-reel" id="c2"><div class="slot-symbol">🌿</div></div>
+        <div class="slot-reel" id="c3"><div class="slot-symbol">🌿</div></div>
+        <div class="slot-reel" id="c4"><div class="slot-symbol">🌿</div></div>
+      </div>
+      <div class="win-message" id="cWinMsg"></div>
+      <div class="slot-controls">
+        <div class="bet-selector">
+          <button class="btn ghost" onclick="change420Bet(-50)">−</button>
+          <div class="bet-amount" id="cBetAmount">$50</div>
+          <button class="btn ghost" onclick="change420Bet(50)">+</button>
+        </div>
+        <button class="spin-btn" style="background:linear-gradient(135deg,#4facfe,#00f2fe)" onclick="spin420()">SPIN 🌿</button>
+      </div>
+      <div class="paytable-mini">
+        <div class="payout-item"><div class="payout-symbols">🌿🌿🌿🌿</div><div class="payout-value">×420</div></div>
+        <div class="payout-item"><div class="payout-symbols">🔥🔥🔥🔥</div><div class="payout-value">×100</div></div>
+        <div class="payout-item"><div class="payout-symbols">💚💚💚💚</div><div class="payout-value">×50</div></div>
+      </div>
+    </div>
+  `;
+}
+
+let cBet = 50;
+const cSymbols = ['🌿','🔥','💚','🍃','🌱'];
+
+function init420Slot() {
+  update420BetDisplay();
+}
+
+function change420Bet(amount) {
+  cBet = Math.max(50, Math.min(1000, cBet + amount));
+  update420BetDisplay();
+}
+
+function update420BetDisplay() {
+  const el = document.getElementById('cBetAmount');
+  if(el) el.textContent = '$' + cBet;
+}
+
+async function spin420() {
+  if(spinning || balance < cBet) return;
+  spinning = true;
+  updateBalance(-cBet);
+  
+  playSpinSound();
+  
+  const winMsg = document.getElementById('cWinMsg');
+  winMsg.textContent = '';
+  
+  const reels = [1,2,3,4].map(i => document.getElementById('c'+i));
+  reels.forEach(r => r.classList.add('spinning'));
+  
+  const spinInterval = setInterval(() => playSound(150, 0.05, 'sawtooth'), 50);
+  
+  await new Promise(r => setTimeout(r, 2500));
+  
+  clearInterval(spinInterval);
+  
+  const results = cSymbols.map(() => cSymbols[Math.floor(Math.random()*cSymbols.length)]);
+  reels.forEach((r,i) => {
+    r.classList.remove('spinning');
+    r.querySelector('.slot-symbol').textContent = results[i];
+  });
+  
+  const allSame = results.every(s => s === results[0]);
+  if(allSame) {
+    let multiplier = results[0] === '🌿' ? 420 : results[0] === '🔥' ? 100 : 50;
+    const win = triggerWinEffects(reels, multiplier, cBet);
+    updateBalance(win);
+    winMsg.textContent = `🌿 420 WIN $${win.toLocaleString()}! 🌿`;
+  } else {
+    playSound(100, 0.2, 'triangle');
+  }
+  
+  spinning = false;
+}
+
+// Mega Fire Slot (3 reels with multiplier streaks)
+function getMegaFireHTML() {
+  return `
+    <div class="slot-game">
+      <div class="slot-reels">
+        <div class="slot-reel" id="m1"><div class="slot-symbol">🔥</div></div>
+        <div class="slot-reel" id="m2"><div class="slot-symbol">🔥</div></div>
+        <div class="slot-reel" id="m3"><div class="slot-symbol">🔥</div></div>
+      </div>
+      <div class="win-message" id="mWinMsg"></div>
+      <div class="slot-controls">
+        <div class="bet-selector">
+          <button class="btn ghost" onclick="changeMegaBet(-10)">−</button>
+          <div class="bet-amount" id="mBetAmount">$20</div>
+          <button class="btn ghost" onclick="changeMegaBet(10)">+</button>
+        </div>
+        <button class="spin-btn" style="background:linear-gradient(135deg,#ff6b6b,#feca57)" onclick="spinMega()">SPIN 🔥</button>
+      </div>
+      <div class="paytable-mini">
+        <div class="payout-item"><div class="payout-symbols">🔥🔥🔥</div><div class="payout-value">×200</div></div>
+        <div class="payout-item"><div class="payout-symbols">⚡⚡⚡</div><div class="payout-value">×75</div></div>
+        <div class="payout-item"><div class="payout-symbols">💥💥💥</div><div class="payout-value">×50</div></div>
+      </div>
+    </div>
+  `;
+}
+
+let mBet = 20;
+const mSymbols = ['🔥','⚡','💥','🌟','💫'];
+
+function initMegaFire() {
+  updateMegaBetDisplay();
+}
+
+function changeMegaBet(amount) {
+  mBet = Math.max(20, Math.min(500, mBet + amount));
+  updateMegaBetDisplay();
+}
+
+function updateMegaBetDisplay() {
+  const el = document.getElementById('mBetAmount');
+  if(el) el.textContent = '$' + mBet;
+}
+
+async function spinMega() {
+  if(spinning || balance < mBet) return;
+  spinning = true;
+  updateBalance(-mBet);
+  
+  playSpinSound();
+  
+  const winMsg = document.getElementById('mWinMsg');
+  winMsg.textContent = '';
+  
+  const reels = [1,2,3].map(i => document.getElementById('m'+i));
+  reels.forEach(r => r.classList.add('spinning'));
+  
+  const spinInterval = setInterval(() => playSound(150, 0.05, 'sawtooth'), 50);
+  
+  await new Promise(r => setTimeout(r, 2000));
+  
+  clearInterval(spinInterval);
+  
+  const results = mSymbols.map(() => mSymbols[Math.floor(Math.random()*mSymbols.length)]);
+  reels.forEach((r,i) => {
+    r.classList.remove('spinning');
+    r.querySelector('.slot-symbol').textContent = results[i];
+  });
+  
+  const allSame = results.every(s => s === results[0]);
+  if(allSame) {
+    let multiplier = results[0] === '🔥' ? 200 : results[0] === '⚡' ? 75 : 50;
+    const win = triggerWinEffects(reels, multiplier, mBet);
+    updateBalance(win);
+    winMsg.textContent = `🔥 MEGA WIN $${win.toLocaleString()}! 🔥`;
+  } else {
+    playSound(100, 0.2, 'triangle');
+  }
+  
+  spinning = false;
+}
+
+// Lucky Sevens (3 reels focused on 7s)
+function getLucky7HTML() {
+  return `
+    <div class="slot-game">
+      <div class="slot-reels">
+        <div class="slot-reel" id="l1"><div class="slot-symbol">7️⃣</div></div>
+        <div class="slot-reel" id="l2"><div class="slot-symbol">7️⃣</div></div>
+        <div class="slot-reel" id="l3"><div class="slot-symbol">7️⃣</div></div>
+      </div>
+      <div class="win-message" id="lWinMsg"></div>
+      <div class="slot-controls">
+        <div class="bet-selector">
+          <button class="btn ghost" onclick="changeLucky7Bet(-15)">−</button>
+          <div class="bet-amount" id="lBetAmount">$15</div>
+          <button class="btn ghost" onclick="changeLucky7Bet(15)">+</button>
+        </div>
+        <button class="spin-btn" style="background:linear-gradient(135deg,#ee5a6f,#f29263)" onclick="spinLucky7()">SPIN 7️⃣</button>
+      </div>
+      <div class="paytable-mini">
+        <div class="payout-item"><div class="payout-symbols">7️⃣7️⃣7️⃣</div><div class="payout-value">×777</div></div>
+        <div class="payout-item"><div class="payout-symbols">⭐⭐⭐</div><div class="payout-value">×50</div></div>
+        <div class="payout-item"><div class="payout-symbols">💰💰💰</div><div class="payout-value">×30</div></div>
+      </div>
+    </div>
+  `;
+}
+
+let l7Bet = 15;
+const l7Symbols = ['7️⃣','⭐','💰','💎','🎰'];
+
+function initLucky7() {
+  updateLucky7BetDisplay();
+}
+
+function changeLucky7Bet(amount) {
+  l7Bet = Math.max(15, Math.min(500, l7Bet + amount));
+  updateLucky7BetDisplay();
+}
+
+function updateLucky7BetDisplay() {
+  const el = document.getElementById('lBetAmount');
+  if(el) el.textContent = '$' + l7Bet;
+}
+
+async function spinLucky7() {
+  if(spinning || balance < l7Bet) return;
+  spinning = true;
+  updateBalance(-l7Bet);
+  
+  playSpinSound();
+  
+  const winMsg = document.getElementById('lWinMsg');
+  winMsg.textContent = '';
+  
+  const reels = [1,2,3].map(i => document.getElementById('l'+i));
+  reels.forEach(r => r.classList.add('spinning'));
+  
+  const spinInterval = setInterval(() => playSound(150, 0.05, 'sawtooth'), 50);
+  
+  await new Promise(r => setTimeout(r, 2000));
+  
+  clearInterval(spinInterval);
+  
+  const results = l7Symbols.map(() => l7Symbols[Math.floor(Math.random()*l7Symbols.length)]);
+  reels.forEach((r,i) => {
+    r.classList.remove('spinning');
+    r.querySelector('.slot-symbol').textContent = results[i];
+  });
+  
+  const allSame = results.every(s => s === results[0]);
+  if(allSame) {
+    let multiplier = results[0] === '7️⃣' ? 777 : results[0] === '⭐' ? 50 : 30;
+    const win = triggerWinEffects(reels, multiplier, l7Bet);
+    updateBalance(win);
+    winMsg.textContent = `🎉 LUCKY 7! $${win.toLocaleString()}! 🎉`;
+  } else {
+    playSound(100, 0.2, 'triangle');
+  }
+  
+  spinning = false;
+}
+
+// Fruit Frenzy (4 reels with fruit symbols)
+function getFruityHTML() {
+  return `
+    <div class="slot-game">
+      <div class="slot-reels">
+        <div class="slot-reel" id="f1"><div class="slot-symbol">🍒</div></div>
+        <div class="slot-reel" id="f2"><div class="slot-symbol">🍋</div></div>
+        <div class="slot-reel" id="f3"><div class="slot-symbol">🍊</div></div>
+        <div class="slot-reel" id="f4"><div class="slot-symbol">🍇</div></div>
+      </div>
+      <div class="win-message" id="fWinMsg"></div>
+      <div class="slot-controls">
+        <div class="bet-selector">
+          <button class="btn ghost" onclick="changeFruityBet(-5)">−</button>
+          <div class="bet-amount" id="fBetAmount">$5</div>
+          <button class="btn ghost" onclick="changeFruityBet(5)">+</button>
+        </div>
+        <button class="spin-btn" style="background:linear-gradient(135deg,#56ab2f,#a8e063)" onclick="spinFruity()">SPIN 🍒</button>
+      </div>
+      <div class="paytable-mini">
+        <div class="payout-item"><div class="payout-symbols">🍒🍒🍒🍒</div><div class="payout-value">×100</div></div>
+        <div class="payout-item"><div class="payout-symbols">🍋🍋🍋🍋</div><div class="payout-value">×80</div></div>
+        <div class="payout-item"><div class="payout-symbols">🍊🍊🍊🍊</div><div class="payout-value">×60</div></div>
+      </div>
+    </div>
+  `;
+}
+
+let fBet = 5;
+const fSymbols = ['🍒','🍋','🍊','🍇','🍉','🍓'];
+
+function initFruity() {
+  updateFruityBetDisplay();
+}
+
+function changeFruityBet(amount) {
+  fBet = Math.max(5, Math.min(200, fBet + amount));
+  updateFruityBetDisplay();
+}
+
+function updateFruityBetDisplay() {
+  const el = document.getElementById('fBetAmount');
+  if(el) el.textContent = '$' + fBet;
+}
+
+async function spinFruity() {
+  if(spinning || balance < fBet) return;
+  spinning = true;
+  updateBalance(-fBet);
+  
+  playSpinSound();
+  
+  const winMsg = document.getElementById('fWinMsg');
+  winMsg.textContent = '';
+  
+  const reels = [1,2,3,4].map(i => document.getElementById('f'+i));
+  reels.forEach(r => r.classList.add('spinning'));
+  
+  const spinInterval = setInterval(() => playSound(150, 0.05, 'sawtooth'), 50);
+  
+  await new Promise(r => setTimeout(r, 2200));
+  
+  clearInterval(spinInterval);
+  
+  const results = fSymbols.map(() => fSymbols[Math.floor(Math.random()*fSymbols.length)]);
+  reels.forEach((r,i) => {
+    r.classList.remove('spinning');
+    r.querySelector('.slot-symbol').textContent = results[i];
+  });
+  
+  const allSame = results.every(s => s === results[0]);
+  if(allSame) {
+    let multiplier = results[0] === '🍒' ? 100 : results[0] === '🍋' ? 80 : 60;
+    const win = triggerWinEffects(reels, multiplier, fBet);
+    updateBalance(win);
+    winMsg.textContent = `🍒 FRUIT FRENZY! $${win.toLocaleString()}! 🍒`;
+  } else {
+    playSound(100, 0.2, 'triangle');
+  }
+  
+  spinning = false;
+}
+
+// Break the Bank (5 reels - high stakes vault raid)
+function getBreakBankHTML() {
+  return `
+    <div class="slot-game">
+      <div style="font-size:24px;color:#ffd700;margin-bottom:16px;font-weight:700">🏦 VAULT RAID 🏦</div>
+      <div class="slot-reels">
+        <div class="slot-reel" id="b1"><div class="slot-symbol">💰</div></div>
+        <div class="slot-reel" id="b2"><div class="slot-symbol">💰</div></div>
+        <div class="slot-reel" id="b3"><div class="slot-symbol">💰</div></div>
+        <div class="slot-reel" id="b4"><div class="slot-symbol">💰</div></div>
+        <div class="slot-reel" id="b5"><div class="slot-symbol">💰</div></div>
+      </div>
+      <div class="win-message" id="bWinMsg"></div>
+      <div class="slot-controls">
+        <div class="bet-selector">
+          <button class="btn ghost" onclick="changeBankBet(-100)">−</button>
+          <div class="bet-amount" id="bBetAmount">$100</div>
+          <button class="btn ghost" onclick="changeBankBet(100)">+</button>
+        </div>
+        <button class="spin-btn" style="background:linear-gradient(135deg,#11998e,#38ef7d)" onclick="spinBreakBank()">RAID VAULT 🏦</button>
+      </div>
+      <div class="paytable-mini">
+        <div class="payout-item"><div class="payout-symbols">💰💰💰💰💰</div><div class="payout-value">×500</div></div>
+        <div class="payout-item"><div class="payout-symbols">💎💎💎💎💎</div><div class="payout-value">×300</div></div>
+        <div class="payout-item"><div class="payout-symbols">🏦🏦🏦🏦🏦</div><div class="payout-value">×1000</div></div>
+      </div>
+    </div>
+  `;
+}
+
+let bBet = 100;
+const bSymbols = ['💰','💎','🏦','💵','🤑','🪙'];
+
+function initBreakBank() {
+  updateBankBetDisplay();
+}
+
+function changeBankBet(amount) {
+  bBet = Math.max(100, Math.min(1000, bBet + amount));
+  updateBankBetDisplay();
+}
+
+function updateBankBetDisplay() {
+  const el = document.getElementById('bBetAmount');
+  if(el) el.textContent = '$' + bBet;
+}
+
+async function spinBreakBank() {
+  if(spinning || balance < bBet) return;
+  spinning = true;
+  updateBalance(-bBet);
+  
+  playSpinSound();
+  
+  const winMsg = document.getElementById('bWinMsg');
+  winMsg.textContent = '';
+  
+  const reels = [1,2,3,4,5].map(i => document.getElementById('b'+i));
+  reels.forEach(r => r.classList.add('spinning'));
+  
+  const spinInterval = setInterval(() => playSound(150, 0.05, 'sawtooth'), 50);
+  
+  await new Promise(r => setTimeout(r, 3000));
+  
+  clearInterval(spinInterval);
+  
+  const results = bSymbols.map(() => bSymbols[Math.floor(Math.random()*bSymbols.length)]);
+  reels.forEach((r,i) => {
+    r.classList.remove('spinning');
+    r.querySelector('.slot-symbol').textContent = results[i];
+  });
+  
+  const allSame = results.every(s => s === results[0]);
+  if(allSame) {
+    let multiplier = results[0] === '🏦' ? 1000 : results[0] === '💰' ? 500 : 300;
+    const win = triggerWinEffects(reels, multiplier, bBet);
+    updateBalance(win);
+    winMsg.textContent = `💥 BANK HEIST! $${win.toLocaleString()}! 💥`;
+  } else {
+    playSound(100, 0.2, 'triangle');
+  }
+  
+  spinning = false;
+}
+
+// Huff & Puff (4 reels - smoke themed)
+function getHuffPuffHTML() {
+  return `
+    <div class="slot-game">
+      <div style="font-size:24px;color:#d04ed6;margin-bottom:16px;font-weight:700">💨 SMOKE SESSION 💨</div>
+      <div class="slot-reels">
+        <div class="slot-reel" id="h1"><div class="slot-symbol">💨</div></div>
+        <div class="slot-reel" id="h2"><div class="slot-symbol">💨</div></div>
+        <div class="slot-reel" id="h3"><div class="slot-symbol">💨</div></div>
+        <div class="slot-reel" id="h4"><div class="slot-symbol">💨</div></div>
+      </div>
+      <div class="win-message" id="hWinMsg"></div>
+      <div class="slot-controls">
+        <div class="bet-selector">
+          <button class="btn ghost" onclick="changeHuffBet(-25)">−</button>
+          <div class="bet-amount" id="hBetAmount">$25</div>
+          <button class="btn ghost" onclick="changeHuffBet(25)">+</button>
+        </div>
+        <button class="spin-btn" style="background:linear-gradient(135deg,#834d9b,#d04ed6)" onclick="spinHuffPuff()">PUFF PUFF 💨</button>
+      </div>
+      <div class="paytable-mini">
+        <div class="payout-item"><div class="payout-symbols">💨💨💨💨</div><div class="payout-value">×250</div></div>
+        <div class="payout-item"><div class="payout-symbols">🌿🌿🌿🌿</div><div class="payout-value">×150</div></div>
+        <div class="payout-item"><div class="payout-symbols">🔥🔥🔥🔥</div><div class="payout-value">×100</div></div>
+      </div>
+    </div>
+  `;
+}
+
+let hBet = 25;
+const hSymbols = ['💨','🌿','🔥','💚','🍃','🌬️'];
+
+function initHuffPuff() {
+  updateHuffBetDisplay();
+}
+
+function changeHuffBet(amount) {
+  hBet = Math.max(25, Math.min(500, hBet + amount));
+  updateHuffBetDisplay();
+}
+
+function updateHuffBetDisplay() {
+  const el = document.getElementById('hBetAmount');
+  if(el) el.textContent = '$' + hBet;
+}
+
+async function spinHuffPuff() {
+  if(spinning || balance < hBet) return;
+  spinning = true;
+  updateBalance(-hBet);
+  
+  playSpinSound();
+  
+  const winMsg = document.getElementById('hWinMsg');
+  winMsg.textContent = '';
+  
+  const reels = [1,2,3,4].map(i => document.getElementById('h'+i));
+  reels.forEach(r => r.classList.add('spinning'));
+  
+  const spinInterval = setInterval(() => playSound(150, 0.05, 'sawtooth'), 50);
+  
+  await new Promise(r => setTimeout(r, 2500));
+  
+  clearInterval(spinInterval);
+  
+  const results = hSymbols.map(() => hSymbols[Math.floor(Math.random()*hSymbols.length)]);
+  reels.forEach((r,i) => {
+    r.classList.remove('spinning');
+    r.querySelector('.slot-symbol').textContent = results[i];
+  });
+  
+  const allSame = results.every(s => s === results[0]);
+  if(allSame) {
+    let multiplier = results[0] === '💨' ? 250 : results[0] === '🌿' ? 150 : 100;
+    const win = triggerWinEffects(reels, multiplier, hBet);
+    updateBalance(win);
+    winMsg.textContent = `💨 CLOUD 9! $${win.toLocaleString()}! 💨`;
+  } else {
+    playSound(100, 0.2, 'triangle');
+  }
+  
+  spinning = false;
+}
+
+// Money Rain (3 reels - cash themed)
+function getMoneyRainHTML() {
+  return `
+    <div class="slot-game">
+      <div style="font-size:24px;color:#f2c94c;margin-bottom:16px;font-weight:700">💵 CASH SHOWER 💵</div>
+      <div class="slot-reels">
+        <div class="slot-reel" id="r1"><div class="slot-symbol">💵</div></div>
+        <div class="slot-reel" id="r2"><div class="slot-symbol">💵</div></div>
+        <div class="slot-reel" id="r3"><div class="slot-symbol">💵</div></div>
+      </div>
+      <div class="win-message" id="rWinMsg"></div>
+      <div class="slot-controls">
+        <div class="bet-selector">
+          <button class="btn ghost" onclick="changeMoneyBet(-30)">−</button>
+          <div class="bet-amount" id="rBetAmount">$30</div>
+          <button class="btn ghost" onclick="changeMoneyBet(30)">+</button>
+        </div>
+        <button class="spin-btn" style="background:linear-gradient(135deg,#f2994a,#f2c94c)" onclick="spinMoneyRain()">MAKE IT RAIN 💵</button>
+      </div>
+      <div class="paytable-mini">
+        <div class="payout-item"><div class="payout-symbols">💵💵💵</div><div class="payout-value">×300</div></div>
+        <div class="payout-item"><div class="payout-symbols">💰💰💰</div><div class="payout-value">×200</div></div>
+        <div class="payout-item"><div class="payout-symbols">🤑🤑🤑</div><div class="payout-value">×150</div></div>
+      </div>
+    </div>
+  `;
+}
+
+let rBet = 30;
+const rSymbols = ['💵','💰','🤑','💸','💴','💶'];
+
+function initMoneyRain() {
+  updateMoneyBetDisplay();
+}
+
+function changeMoneyBet(amount) {
+  rBet = Math.max(30, Math.min(500, rBet + amount));
+  updateMoneyBetDisplay();
+}
+
+function updateMoneyBetDisplay() {
+  const el = document.getElementById('rBetAmount');
+  if(el) el.textContent = '$' + rBet;
+}
+
+async function spinMoneyRain() {
+  if(spinning || balance < rBet) return;
+  spinning = true;
+  updateBalance(-rBet);
+  
+  playSpinSound();
+  
+  const winMsg = document.getElementById('rWinMsg');
+  winMsg.textContent = '';
+  
+  const reels = [1,2,3].map(i => document.getElementById('r'+i));
+  reels.forEach(r => r.classList.add('spinning'));
+  
+  const spinInterval = setInterval(() => playSound(150, 0.05, 'sawtooth'), 50);
+  
+  await new Promise(r => setTimeout(r, 2000));
+  
+  clearInterval(spinInterval);
+  
+  const results = rSymbols.map(() => rSymbols[Math.floor(Math.random()*rSymbols.length)]);
+  reels.forEach((r,i) => {
+    r.classList.remove('spinning');
+    r.querySelector('.slot-symbol').textContent = results[i];
+  });
+  
+  const allSame = results.every(s => s === results[0]);
+  if(allSame) {
+    let multiplier = results[0] === '💵' ? 300 : results[0] === '💰' ? 200 : 150;
+    const win = triggerWinEffects(reels, multiplier, rBet);
+    updateBalance(win);
+    winMsg.textContent = `💸 MONEY RAIN! $${win.toLocaleString()}! 💸`;
+  } else {
+    playSound(100, 0.2, 'triangle');
+  }
+  
+  spinning = false;
+}
+
+// Initialize
+updateBalance(0);
+</script>
+{% endblock %}

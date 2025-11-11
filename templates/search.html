@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap" style="max-width:1200px;margin:40px auto;padding:20px">
+  <h2>Search Results for "{{ query }}"</h2>
+  
+  {% if videos or users or servers %}
+    <!-- Videos -->
+    {% if videos %}
+    <section class="card" style="margin-bottom:30px">
+      <h3>📹 Videos ({{ videos|length }})</h3>
+      <div class="video-grid">
+        {% for v in videos %}
+        <a class="vcard" href="{{ url_for('watch', vid=v.id) }}">
+          <img class="thumb" src="{{ v.thumbnail or '/static/leaf.png' }}">
+          <div class="vt">{{ v.title }}</div>
+          <div class="meta">{{ v.created_at|date }}</div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    
+    <!-- Users -->
+    {% if users %}
+    <section class="card" style="margin-bottom:30px">
+      <h3>👤 Users ({{ users|length }})</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:15px;padding:15px">
+        {% for u in users %}
+        <div style="padding:15px;background:var(--soft);border:1px solid var(--border-glow);border-radius:8px">
+          <strong style="color:var(--green)">{{ u.username }}</strong>
+          <div style="opacity:0.8;margin-top:5px">{{ u.display }}</div>
+          {% if user and user.id != u.id %}
+          <a href="{{ url_for('messages', friend_id=u.id) }}" class="btn ghost" style="margin-top:10px;padding:6px 12px;font-size:0.9rem">Message</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    
+    <!-- Servers -->
+    {% if servers %}
+    <section class="card">
+      <h3>🌿 Servers ({{ servers|length }})</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;padding:15px">
+        {% for s in servers %}
+        <a href="{{ url_for('server', slug=s.slug) }}" style="padding:15px;background:var(--soft);border:1px solid var(--border-glow);border-radius:8px;text-decoration:none;display:block">
+          <strong style="color:var(--green)">🌿 {{ s.name }}</strong>
+          <div style="opacity:0.7;margin-top:5px;font-size:0.9rem">{{ s.channels|length if s.channels else 0 }} channels</div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  {% else %}
+    <div class="card" style="text-align:center;padding:60px 20px">
+      <p style="opacity:0.7;font-size:1.2rem">No results found for "{{ query }}"</p>
+      <p style="opacity:0.5;margin-top:10px">Try different keywords</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

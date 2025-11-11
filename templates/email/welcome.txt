@@ -1,0 +1,14 @@
+Hey {{ user.display or user.username }},
+
+Welcome to CannaSpot — the greatest spot on the net for growers and fans alike.
+
+You're in! Here are a few quick ways to get rolling:
+- Visit Recent: {{ site_url }}/
+- Join a server or create your own: {{ site_url }}/servers
+- Upload your first video: {{ site_url }}/upload
+- Find friends and start a chat: {{ site_url }}/friends
+
+If you didn’t sign up for CannaSpot, you can ignore this email.
+
+Stay lifted,
+The CannaSpot Team 🌿

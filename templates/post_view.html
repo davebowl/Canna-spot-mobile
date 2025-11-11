@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="wrap" style="max-width:860px;margin:0 auto;padding:10px">
+  <div class="card" style="padding:20px">
+    <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px">
+      <div>
+        <h2 style="margin:0">{{ post.title }}</h2>
+        <div style="font-size:0.8rem;opacity:0.7">by <a href="{{ url_for('profile', username=post.author.username) }}">@{{ post.author.username }}</a> · {{ post.created_at|date }}{% if post.updated_at and post.updated_at != post.created_at %} · edited{% endif %}</div>
+      </div>
+      {% if user and user.id == post.author.id %}
+      <div style="display:flex;gap:8px">
+        <a href="{{ url_for('edit_post', pid=post.id) }}" class="btn tiny">Edit</a>
+        <form method="post" action="{{ url_for('delete_post', pid=post.id) }}" onsubmit="return confirm('Delete this post?')">
+          <button class="btn tiny red">Delete</button>
+        </form>
+      </div>
+      {% endif %}
+    </header>
+    <div class="post-body" style="margin-top:16px;line-height:1.55;font-size:1rem">{{ post.content_html|safe }}</div>
+    <div style="margin-top:30px;font-size:0.75rem;opacity:0.5">Post ID #{{ post.id }}</div>
+  </div>
+  <div style="margin-top:24px">
+    <a href="{{ url_for('posts') }}" class="btn small">← Back to Posts</a>
+  </div>
+</article>
+{% endblock %}

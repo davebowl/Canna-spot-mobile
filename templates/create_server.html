@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Create Server</h2>
+<form method="post" enctype="multipart/form-data" class="card">
+  <label>
+    Server Name
+    <input name="name" required>
+  </label>
+  
+  <label>
+    Server Icon (optional)
+    <input type="file" name="server_icon" accept="image/*">
+    <small style="opacity:.7">Upload a square image for best results</small>
+  </label>
+  
+  <button class="btn">Create Server</button>
+</form>
+{% endblock %}

@@ -1,0 +1,840 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="discord-layout">
+  <div class="server-channels">
+    <div class="server-header">
+      <h2>{{ server.name }}</h2>
+    </div>
+    <div class="channel-groups">
+      <div class="channel-item active">
+        <svg class="channel-hash" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        <span>{{ ch.name }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="server-content">
+    <div class="voice-container">
+      <div class="voice-header">
+        <h2>🔊 {{ ch.name }}</h2>
+        <div class="voice-controls">
+          <button id="toggleMute" class="btn ghost">🎤 Mute</button>
+          <button id="leaveVoice" class="btn ghost">📞 Leave</button>
+        </div>
+      </div>
+
+      <div class="participants-grid">
+        {% for user_obj, part in participants %}
+          <div class="participant" data-uid="{{ user_obj.id }}">
+            <div class="participant-avatar">{{ user_obj.username[0].upper() }}</div>
+            <div class="participant-name">{{ user_obj.username }}</div>
+            {% if part.is_muted %}<span class="muted-icon">🔇</span>{% endif %}
+          </div>
+        {% endfor %}
+        {% if user %}
+        <div class="participant me" id="localUser" data-uid="{{ user.id }}">
+          <div class="participant-avatar">{{ user.username[0].upper() }}</div>
+          <div class="participant-name">{{ user.username }} (you)</div>
+          <span class="speaking-indicator"></span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="voice-status" id="voiceStatus">
+        <p>Click join to connect to voice</p>
+        <button id="joinVoice" class="btn green">Join Voice Channel</button>
+      </div>
+
+      <!-- Music Bot Section -->
+      <div class="music-bot-section" id="musicBotSection">
+        <div class="music-bot-header">
+          <h3>🎵 Music Bot</h3>
+          <button id="toggleMusicBot" class="btn ghost">Invite Bot</button>
+        </div>
+        
+        <!-- YouTube Player (outside controls so it exists on page load) -->
+        <div id="playerContainer" style="display:none; margin-bottom:16px">
+          <div id="player"></div>
+        </div>
+        
+        <div class="music-bot-controls" id="musicBotControls" style="display:none">
+          <div class="now-playing" id="nowPlaying">
+            <div class="np-icon">🎵</div>
+            <div class="np-info">
+              <div class="np-title" id="npTitle">No song playing</div>
+              <div class="np-status" id="npStatus">Idle</div>
+            </div>
+          </div>
+
+          <div class="playback-controls">
+            <button id="btnPause" class="btn ghost" title="Pause">⏸️</button>
+            <button id="btnSkip" class="btn ghost" title="Skip">⏭️</button>
+            <button id="btnStop" class="btn ghost" title="Stop">⏹️</button>
+            <button id="btnLoop" class="btn ghost" title="Loop Off">🔁</button>
+            <button id="btnShuffle" class="btn ghost" title="Shuffle">🔀</button>
+          </div>
+
+          <div class="volume-controls">
+            <button id="btnMute" class="btn ghost" title="Mute">🔊</button>
+            <input type="range" id="volumeSlider" min="0" max="100" value="50" class="volume-slider">
+            <span id="volumePercent">50%</span>
+          </div>
+
+          <div class="add-song-form">
+            <input type="text" id="songUrl" placeholder="Paste YouTube URL or search for a song..." class="input">
+            <button id="btnSearch" class="btn ghost">🔍 Search</button>
+            <button id="btnPlay" class="btn green">Add to Queue</button>
+            <button id="btnTest" class="btn ghost" style="font-size:12px">Test Sound</button>
+          </div>
+
+          <div id="searchResults" class="search-results" style="display:none">
+            <h4>Search Results</h4>
+            <div id="searchResultsList" class="search-results-list">
+              <!-- Results will be populated here -->
+            </div>
+          </div>
+
+          <div class="queue-section">
+            <h4>Queue</h4>
+            <div id="queueList" class="queue-list">
+              <p class="text-muted">Queue is empty</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.voice-container{padding:24px;max-width:800px;margin:0 auto}
+.voice-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border-glow)}
+.voice-controls{display:flex;gap:12px}
+.participants-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:16px;margin:24px 0}
+.participant{background:var(--card);border:1px solid var(--border-glow);border-radius:12px;padding:16px;text-align:center;position:relative;transition:all .2s}
+.participant.speaking{border-color:var(--green);box-shadow:0 0 12px var(--green)}
+.participant-avatar{width:64px;height:64px;border-radius:50%;background:var(--soft);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;margin:0 auto 8px;color:var(--green)}
+.participant-name{font-size:14px;color:var(--text);margin-top:8px}
+.muted-icon{position:absolute;top:8px;right:8px;font-size:16px}
+.speaking-indicator{display:none;width:8px;height:8px;background:var(--green);border-radius:50%;position:absolute;bottom:8px;right:8px;animation:pulse 1s infinite}
+.participant.speaking .speaking-indicator{display:block}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.voice-status{text-align:center;margin-top:32px;padding:24px;background:var(--card);border:1px solid var(--border-glow);border-radius:12px}
+.voice-status.connected{display:none}
+
+/* Music Bot Styles */
+.music-bot-section{margin-top:32px;padding:24px;background:var(--card);border:1px solid var(--border-glow);border-radius:12px}
+.music-bot-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.music-bot-header h3{margin:0;color:var(--green)}
+.now-playing{display:flex;align-items:center;gap:16px;padding:16px;background:var(--soft);border-radius:8px;margin-bottom:16px}
+.np-icon{font-size:32px}
+.np-info{flex:1}
+.np-title{font-weight:600;font-size:16px;color:var(--text);margin-bottom:4px}
+.np-status{font-size:13px;color:var(--text-dim);text-transform:uppercase}
+.playback-controls{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
+.playback-controls .btn{padding:8px 16px;font-size:20px}
+.volume-controls{display:flex;align-items:center;gap:12px;padding:12px;background:var(--soft);border-radius:8px;margin-bottom:16px}
+.volume-controls .btn{padding:8px;font-size:20px;min-width:auto}
+.volume-slider{flex:1;height:6px;border-radius:3px;background:var(--border-glow);outline:none;cursor:pointer}
+.volume-slider::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:var(--green);cursor:pointer}
+.volume-slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--green);cursor:pointer;border:none}
+#volumePercent{min-width:40px;text-align:right;font-size:14px;color:var(--text);font-weight:600}
+.add-song-form{display:flex;gap:8px;margin-bottom:16px}
+.add-song-form .input{flex:1;padding:10px;border:1px solid var(--border-glow);border-radius:8px;background:var(--soft);color:var(--text)}
+.search-results{margin-bottom:16px}
+.search-results h4{margin:0 0 8px;color:var(--green);font-size:14px;text-transform:uppercase}
+.search-results-list{max-height:300px;overflow-y:auto;background:var(--soft);border-radius:8px;padding:8px}
+.search-result-item{display:flex;gap:12px;padding:8px;background:var(--card);border:1px solid var(--border-glow);border-radius:6px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.search-result-item:hover{border-color:var(--green);transform:translateX(4px)}
+.search-result-thumb{width:120px;height:68px;border-radius:4px;object-fit:cover;flex-shrink:0}
+.search-result-info{flex:1;min-width:0}
+.search-result-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-result-channel{font-size:12px;color:var(--text-dim);margin-bottom:2px}
+.search-result-duration{font-size:11px;color:var(--text-dim)}
+.queue-section h4{margin:16px 0 8px;color:var(--green);font-size:14px;text-transform:uppercase}
+.queue-list{max-height:200px;overflow-y:auto}
+.queue-item{padding:8px 12px;background:var(--soft);border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.queue-item .title{font-size:14px;color:var(--text);flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-item .pos{font-size:12px;color:var(--text-dim);min-width:30px}
+.queue-item .btn-remove{background:none;border:none;cursor:pointer;font-size:14px;padding:4px 8px;opacity:0.5;transition:opacity .2s}
+.queue-item .btn-remove:hover{opacity:1}
+.text-muted{color:var(--text-dim);text-align:center;padding:16px;font-size:14px}
+</style>
+
+<div id="voiceMeta" data-channel-id="{{ ch.id }}" data-user-id="{{ user.id if user else 0 }}" style="display:none"></div>
+
+<!-- YouTube IFrame Player API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+// Embed dynamic IDs via data attributes to avoid inline template vars in JS parsing
+let localStream = null;
+let peers = {};
+let isMuted = false;
+const metaEl = document.getElementById('voiceMeta');
+const channelId = parseInt(metaEl?.dataset.channelId || '0', 10);
+const userId = parseInt(metaEl?.dataset.userId || '0', 10);
+
+// YouTube Player variables
+let ytPlayer = null;
+let playerReady = false;
+let isMusicMuted = false;
+let currentVolume = 50;
+
+document.getElementById('joinVoice')?.addEventListener('click', async ()=>{
+  const statusEl = document.getElementById('voiceStatus');
+  try {
+    // Mobile-friendly audio constraints
+    const constraints = {
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+        sampleRate: 48000
+      }
+    };
+    // iOS Safari sometimes fails unless only {audio:true}
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch(er) {
+      // Fallback minimal
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    statusEl.classList.add('connected');
+    document.getElementById('localUser')?.classList.add('speaking');
+
+    // Send join event to server
+    await fetch(`/api/voice/join/${channelId}`, {method:'POST'});
+
+    // Detect speaking (energy-based)
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioContext.createAnalyser();
+    const microphone = audioContext.createMediaStreamSource(localStream);
+    microphone.connect(analyser);
+    analyser.fftSize = 512;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    let lastSpeaking = false;
+    setInterval(()=>{
+      analyser.getByteFrequencyData(dataArray);
+      const avg = dataArray.reduce((a,b)=>a+b)/dataArray.length;
+      const speaking = avg > 30; // heuristic threshold
+      if(speaking !== lastSpeaking){
+        const el = document.getElementById('localUser');
+        if(el){
+          el.classList.toggle('speaking', speaking);
+        }
+        lastSpeaking = speaking;
+      }
+    }, 120);
+  } catch(e) {
+    console.warn('[voice] getUserMedia error', e);
+    let msg = 'Microphone access failed.';
+    if(e.name === 'NotAllowedError') msg = 'Permission denied. Please allow microphone access in your browser settings.';
+    else if(e.name === 'NotFoundError') msg = 'No microphone detected. Plug in or enable a mic.';
+    else if(e.name === 'SecurityError') msg = 'Insecure context. Use HTTPS for audio capture.';
+    statusEl.innerHTML = `<p style="color:#f66">${msg}</p><button id="retryMic" class="btn ghost">Retry</button>`;
+    document.getElementById('retryMic')?.addEventListener('click', ()=>{
+      window.location.reload();
+    });
+  }
+});
+
+document.getElementById('toggleMute')?.addEventListener('click', ()=>{
+  if(!localStream) return;
+  isMuted = !isMuted;
+  localStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
+  document.getElementById('toggleMute').textContent = isMuted ? '🎤 Unmute' : '🎤 Mute';
+  fetch(`/api/voice/mute/${channelId}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({muted:isMuted})
+  });
+});
+
+document.getElementById('leaveVoice')?.addEventListener('click', async ()=>{
+  if(localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
+  }
+  await fetch(`/api/voice/leave/${channelId}`, {method:'POST'});
+  window.location.href = '{{ url_for("server", slug=server.slug) }}';
+});
+
+// TODO: Implement WebRTC signaling for actual peer-to-peer audio
+// This requires Socket.IO or similar for real-time communication
+
+// ============ Music Bot ============
+let botActive = false;
+
+// YouTube Player API callback
+function onYouTubeIframeAPIReady() {
+  console.log('[music-bot] YouTube API loaded, creating player...');
+  ytPlayer = new YT.Player('player', {
+    height: '200',
+    width: '100%',
+    videoId: '',
+    playerVars: {
+      'autoplay': 1,
+      'controls': 1,
+      'modestbranding': 1,
+      'rel': 0,
+      'enablejsapi': 1
+    },
+    events: {
+      'onReady': onPlayerReady,
+      'onStateChange': onPlayerStateChange,
+      'onError': onPlayerError
+    }
+  });
+}
+
+function onPlayerReady(event) {
+  playerReady = true;
+  console.log('[music-bot] YouTube player ready');
+  
+  // Set initial volume
+  if (ytPlayer) {
+    ytPlayer.setVolume(currentVolume);
+    ytPlayer.unMute(); // Make sure it's not muted by default
+  }
+}
+
+function onPlayerError(event) {
+  console.error('[music-bot] YouTube player error:', event.data);
+  alert('YouTube player error. Error code: ' + event.data);
+}
+
+function onPlayerStateChange(event) {
+  // YT.PlayerState.ENDED = 0
+  if (event.data === YT.PlayerState.ENDED) {
+    console.log('[music-bot] Song ended, skipping to next');
+    skipSong();
+  }
+}
+
+// Extract YouTube video ID from URL
+function extractYouTubeID(url) {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+// Play video by URL
+function playVideo(url, title) {
+  console.log('[music-bot] playVideo called with URL:', url);
+  const videoId = extractYouTubeID(url);
+  if (!videoId) {
+    console.error('[music-bot] Invalid YouTube URL:', url);
+    return;
+  }
+  
+  console.log('[music-bot] Extracted video ID:', videoId);
+  console.log('[music-bot] Player ready?', playerReady, 'Player exists?', !!ytPlayer);
+  
+  if (ytPlayer && playerReady) {
+    document.getElementById('playerContainer').style.display = 'block';
+    console.log('[music-bot] Loading and playing video ID:', videoId);
+    ytPlayer.loadVideoById({
+      'videoId': videoId,
+      'startSeconds': 0
+    });
+    
+    // Update now playing
+    document.getElementById('npTitle').textContent = title || 'Playing...';
+    document.getElementById('npStatus').textContent = 'Playing';
+  } else {
+    console.error('[music-bot] Cannot play - player not ready. playerReady:', playerReady, 'ytPlayer:', ytPlayer);
+  }
+}
+
+// Check bot status on load
+async function checkBotStatus() {
+  try {
+    const res = await fetch(`/api/music/bot/status/${channelId}`);
+    const data = await res.json();
+    botActive = data.active;
+    
+    if (botActive) {
+      document.getElementById('toggleMusicBot').textContent = 'Kick Bot';
+      document.getElementById('musicBotControls').style.display = 'block';
+      updateNowPlaying(data);
+      loadQueue();
+      
+      // If there's a current song playing, start the player
+      if (data.playing && data.current_song) {
+        // Wait for player to be ready
+        const waitForPlayer = setInterval(() => {
+          if (playerReady) {
+            clearInterval(waitForPlayer);
+            playVideo(data.current_song, data.current_song);
+          }
+        }, 100);
+      }
+    }
+  } catch(e) {
+    console.warn('[music-bot] Status check failed', e);
+  }
+}
+
+// Toggle bot invite/kick
+document.getElementById('toggleMusicBot')?.addEventListener('click', async () => {
+  const btn = document.getElementById('toggleMusicBot');
+  
+  if (!botActive) {
+    // Invite bot
+    try {
+      const res = await fetch(`/api/music/bot/invite/${channelId}`, {method:'POST'});
+      const data = await res.json();
+      if (data.success) {
+        botActive = true;
+        btn.textContent = 'Kick Bot';
+        document.getElementById('musicBotControls').style.display = 'block';
+      }
+    } catch(e) {
+      console.error('[music-bot] Invite failed', e);
+    }
+  } else {
+    // Kick bot
+    if (confirm('Remove music bot from this channel?')) {
+      try {
+        const res = await fetch(`/api/music/bot/kick/${channelId}`, {method:'POST'});
+        const data = await res.json();
+        if (data.success) {
+          botActive = false;
+          btn.textContent = 'Invite Bot';
+          document.getElementById('musicBotControls').style.display = 'none';
+        }
+      } catch(e) {
+        console.error('[music-bot] Kick failed', e);
+      }
+    }
+  }
+});
+
+// Play/Add to queue
+document.getElementById('btnPlay')?.addEventListener('click', async () => {
+  const urlInput = document.getElementById('songUrl');
+  const url = urlInput.value.trim();
+  
+  if (!url) {
+    alert('Please paste a YouTube URL or search for a song');
+    return;
+  }
+  
+  // Validate YouTube URL
+  const videoId = extractYouTubeID(url);
+  if (!videoId) {
+    alert('Invalid YouTube URL. Please use format: youtube.com/watch?v=... or youtu.be/...');
+    return;
+  }
+  
+  await addSongToQueue(url, '');
+});
+
+// Search button
+document.getElementById('btnSearch')?.addEventListener('click', async () => {
+  const query = document.getElementById('songUrl').value.trim();
+  
+  if (!query) {
+    alert('Enter a song name to search');
+    return;
+  }
+  
+  // Show loading
+  const resultsDiv = document.getElementById('searchResults');
+  const resultsList = document.getElementById('searchResultsList');
+  resultsDiv.style.display = 'block';
+  resultsList.innerHTML = '<p class="text-muted">Searching YouTube...</p>';
+  
+  try {
+    // Use our backend search endpoint
+    const response = await fetch(`/api/music/search?q=${encodeURIComponent(query)}`);
+    const data = await response.json();
+    
+    if (data.results && data.results.length > 0) {
+      resultsList.innerHTML = data.results.map((video, idx) => {
+        // Escape quotes and special chars for onclick
+        const safeTitle = video.title.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+        return `
+        <div class="search-result-item" onclick="selectSearchResult('${video.videoId}', this.dataset.title)" data-title="${safeTitle}">
+          <img src="https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg" class="search-result-thumb" alt="">
+          <div class="search-result-info">
+            <div class="search-result-title">${video.title}</div>
+            <div class="search-result-channel">${video.author}</div>
+            <div class="search-result-duration">${video.duration}</div>
+          </div>
+        </div>
+      `;
+      }).join('');
+    } else {
+      resultsList.innerHTML = '<p class="text-muted">No results found. Try pasting a YouTube URL instead.</p>';
+    }
+  } catch(e) {
+    console.error('[music-bot] Search failed', e);
+    resultsList.innerHTML = '<p class="text-muted" style="color:#f66">Search failed. Try pasting a YouTube URL instead.</p>';
+  }
+});
+
+// Select a search result
+window.selectSearchResult = async function(videoId, title) {
+  console.log('[music-bot] Selected video:', videoId, title);
+  
+  const url = `https://www.youtube.com/watch?v=${videoId}`;
+  document.getElementById('songUrl').value = url;
+  
+  // Show adding feedback
+  const resultsList = document.getElementById('searchResultsList');
+  resultsList.innerHTML = '<p class="text-muted">Adding to queue...</p>';
+  
+  // Automatically add to queue
+  await addSongToQueue(url, title);
+  
+  // Hide search results after adding
+  setTimeout(() => {
+    document.getElementById('searchResults').style.display = 'none';
+  }, 1000);
+};
+
+// Extracted add to queue logic
+async function addSongToQueue(url, title) {
+  const urlInput = document.getElementById('songUrl');
+  
+  // Validate YouTube URL
+  const videoId = extractYouTubeID(url);
+  if (!videoId) {
+    alert('Invalid YouTube URL');
+    return;
+  }
+  
+  try {
+    const res = await fetch(`/api/music/bot/play/${channelId}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({url, title})
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      urlInput.value = '';
+      
+      // Wait a moment for the database to update, then check and play
+      setTimeout(async () => {
+        const statusRes = await fetch(`/api/music/bot/status/${channelId}`);
+        const statusData = await statusRes.json();
+        
+        console.log('[music-bot] Status after adding song:', statusData);
+        
+        if (statusData.playing && statusData.current_song) {
+          console.log('[music-bot] Bot is playing, loading video:', statusData.current_song);
+          playVideo(statusData.current_song, statusData.current_song_title || data.title);
+        }
+        
+        loadQueue();
+        updateBotStatus();
+      }, 500);
+    } else {
+      alert(data.error || 'Failed to add song');
+    }
+  } catch(e) {
+    console.error('[music-bot] Play failed', e);
+  }
+}
+
+// Pause/Resume
+document.getElementById('btnPause')?.addEventListener('click', async () => {
+  try {
+    const res = await fetch(`/api/music/bot/pause/${channelId}`, {method:'POST'});
+    const data = await res.json();
+    
+    if (data.success) {
+      document.getElementById('btnPause').textContent = data.paused ? '▶️' : '⏸️';
+      document.getElementById('npStatus').textContent = data.paused ? 'Paused' : 'Playing';
+      
+      // Control YouTube player
+      if (ytPlayer && playerReady) {
+        if (data.paused) {
+          ytPlayer.pauseVideo();
+        } else {
+          ytPlayer.playVideo();
+        }
+      }
+    }
+  } catch(e) {
+    console.error('[music-bot] Pause failed', e);
+  }
+});
+
+// Skip
+document.getElementById('btnSkip')?.addEventListener('click', async () => {
+  await skipSong();
+});
+
+async function skipSong() {
+  try {
+    const res = await fetch(`/api/music/bot/skip/${channelId}`, {method:'POST'});
+    const data = await res.json();
+    
+    if (data.success) {
+      loadQueue();
+      
+      // Get next song and play it
+      const statusRes = await fetch(`/api/music/bot/status/${channelId}`);
+      const statusData = await statusRes.json();
+      
+      if (statusData.playing && statusData.current_song) {
+        playVideo(statusData.current_song, statusData.current_song);
+      } else {
+        // No more songs in queue
+        if (ytPlayer && playerReady) {
+          ytPlayer.stopVideo();
+        }
+        document.getElementById('playerContainer').style.display = 'none';
+        document.getElementById('npTitle').textContent = 'No song playing';
+        document.getElementById('npStatus').textContent = 'Idle';
+      }
+    }
+  } catch(e) {
+    console.error('[music-bot] Skip failed', e);
+  }
+}
+
+// Stop
+document.getElementById('btnStop')?.addEventListener('click', async () => {
+  if (!confirm('Stop playback and clear queue?')) return;
+  
+  try {
+    const res = await fetch(`/api/music/bot/stop/${channelId}`, {method:'POST'});
+    const data = await res.json();
+    
+    if (data.success) {
+      loadQueue();
+      updateBotStatus();
+      
+      // Stop YouTube player
+      if (ytPlayer && playerReady) {
+        ytPlayer.stopVideo();
+      }
+      document.getElementById('playerContainer').style.display = 'none';
+      document.getElementById('npTitle').textContent = 'No song playing';
+      document.getElementById('npStatus').textContent = 'Idle';
+    }
+  } catch(e) {
+    console.error('[music-bot] Stop failed', e);
+  }
+});
+
+// Loop button
+document.getElementById('btnLoop')?.addEventListener('click', async () => {
+  try {
+    const res = await fetch(`/api/music/bot/loop/${channelId}`, {method:'POST'});
+    const data = await res.json();
+    
+    if (data.success) {
+      updateLoopButton(data.loop_mode);
+    }
+  } catch(e) {
+    console.error('[music-bot] Loop toggle failed', e);
+  }
+});
+
+// Shuffle button
+document.getElementById('btnShuffle')?.addEventListener('click', async () => {
+  try {
+    const res = await fetch(`/api/music/bot/shuffle/${channelId}`, {method:'POST'});
+    const data = await res.json();
+    
+    if (data.success) {
+      updateShuffleButton(data.shuffled);
+      loadQueue(); // Reload to show new order
+    }
+  } catch(e) {
+    console.error('[music-bot] Shuffle toggle failed', e);
+  }
+});
+
+// Update loop button appearance
+function updateLoopButton(mode) {
+  const btn = document.getElementById('btnLoop');
+  if (!btn) return;
+  
+  if (mode === 'one') {
+    btn.textContent = '🔂';
+    btn.title = 'Loop One';
+    btn.style.color = 'var(--green)';
+  } else if (mode === 'all') {
+    btn.textContent = '🔁';
+    btn.title = 'Loop All';
+    btn.style.color = 'var(--green)';
+  } else {
+    btn.textContent = '🔁';
+    btn.title = 'Loop Off';
+    btn.style.color = '';
+  }
+}
+
+// Update shuffle button appearance
+function updateShuffleButton(shuffled) {
+  const btn = document.getElementById('btnShuffle');
+  if (!btn) return;
+  
+  btn.style.color = shuffled ? 'var(--green)' : '';
+  btn.title = shuffled ? 'Shuffle On' : 'Shuffle Off';
+}
+
+// Remove song from queue
+window.removeFromQueue = async function(queueId) {
+  try {
+    const res = await fetch(`/api/music/bot/remove/${channelId}/${queueId}`, {method:'POST'});
+    const data = await res.json();
+    
+    if (data.success) {
+      loadQueue();
+    }
+  } catch(e) {
+    console.error('[music-bot] Remove failed', e);
+  }
+};
+
+// Test button - plays a short test video
+document.getElementById('btnTest')?.addEventListener('click', () => {
+  console.log('[music-bot] Test button clicked');
+  console.log('[music-bot] Player ready?', playerReady, 'Player exists?', !!ytPlayer);
+  
+  if (!playerReady || !ytPlayer) {
+    alert('YouTube player not ready yet. Wait a moment and try again.');
+    return;
+  }
+  
+  // Play a short test video (YouTube's test video)
+  const testVideoId = 'jNQXAC9IVRw'; // "Me at the zoo" - first YouTube video, very short
+  document.getElementById('playerContainer').style.display = 'block';
+  ytPlayer.loadVideoById({
+    'videoId': testVideoId,
+    'startSeconds': 0
+  });
+  console.log('[music-bot] Test video loaded');
+});
+
+// Volume control
+document.getElementById('volumeSlider')?.addEventListener('input', (e) => {
+  currentVolume = parseInt(e.target.value);
+  document.getElementById('volumePercent').textContent = currentVolume + '%';
+  
+  if (ytPlayer && playerReady) {
+    ytPlayer.setVolume(currentVolume);
+    
+    // Auto-unmute if volume changed while muted
+    if (isMusicMuted && currentVolume > 0) {
+      isMusicMuted = false;
+      ytPlayer.unMute();
+      document.getElementById('btnMute').textContent = '🔊';
+    }
+  }
+});
+
+// Mute toggle
+document.getElementById('btnMute')?.addEventListener('click', () => {
+  if (!ytPlayer || !playerReady) return;
+  
+  isMusicMuted = !isMusicMuted;
+  
+  if (isMusicMuted) {
+    ytPlayer.mute();
+    document.getElementById('btnMute').textContent = '🔇';
+  } else {
+    ytPlayer.unMute();
+    document.getElementById('btnMute').textContent = '🔊';
+  }
+});
+
+// Load queue
+async function loadQueue() {
+  try {
+    const res = await fetch(`/api/music/bot/queue/${channelId}`);
+    const data = await res.json();
+    
+    const queueList = document.getElementById('queueList');
+    
+    if (!data.queue || data.queue.length === 0) {
+      queueList.innerHTML = '<p class="text-muted">Queue is empty</p>';
+    } else {
+      queueList.innerHTML = data.queue.map((song, idx) => `
+        <div class="queue-item">
+          <span class="pos">#${song.position}</span>
+          <span class="title">${song.title || 'Unknown Song'}</span>
+          <button class="btn-remove" onclick="removeFromQueue(${song.id})" title="Remove">❌</button>
+        </div>
+      `).join('');
+    }
+    
+    // Update loop and shuffle button states
+    updateLoopButton(data.loop_mode);
+    updateShuffleButton(data.is_shuffled);
+    
+    updateNowPlaying(data);
+  } catch(e) {
+    console.error('[music-bot] Queue load failed', e);
+  }
+}
+
+// Update now playing display
+function updateNowPlaying(data) {
+  const titleEl = document.getElementById('npTitle');
+  const statusEl = document.getElementById('npStatus');
+  
+  if (data.current_song_title || data.current_song) {
+    titleEl.textContent = data.current_song_title || data.current_song || 'Playing...';
+    statusEl.textContent = data.paused ? 'Paused' : 'Playing';
+  } else {
+    titleEl.textContent = 'No song playing';
+    statusEl.textContent = 'Idle';
+  }
+}
+
+// Update bot status
+async function updateBotStatus() {
+  try {
+    const res = await fetch(`/api/music/bot/status/${channelId}`);
+    const data = await res.json();
+    updateNowPlaying(data);
+  } catch(e) {
+    console.error('[music-bot] Status update failed', e);
+  }
+}
+
+// Auto-refresh queue every 5 seconds if bot is active
+setInterval(() => {
+  if (botActive) {
+    loadQueue();
+  }
+}, 5000);
+
+// Auto-cleanup: Remove bot from empty channels after 1 minute
+setInterval(async () => {
+  try {
+    await fetch('/api/music/bot/cleanup');
+  } catch(e) {
+    console.error('[music-bot] Cleanup check failed', e);
+  }
+}, 30000); // Check every 30 seconds
+
+// Check bot status on page load
+if (channelId && userId) {
+  checkBotStatus();
+}
+
+// Ensure YouTube API is loaded
+console.log('[music-bot] Page loaded. Waiting for YouTube API...');
+// If API doesn't auto-call onYouTubeIframeAPIReady, we need to check manually
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    if (typeof YT !== 'undefined' && YT.loaded && !playerReady) {
+      console.log('[music-bot] YouTube API detected but player not created, initializing now...');
+      onYouTubeIframeAPIReady();
+    }
+  }, 1000);
+});
+
+</script>
+{% endblock %}

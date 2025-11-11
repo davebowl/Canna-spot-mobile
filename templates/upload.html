@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card" style="padding:20px">
+	<h2 style="margin-bottom:12px">Upload Video</h2>
+	<p class="tiny" style="opacity:.8;margin-bottom:16px">Add a clear title and a helpful description. You can paste links; they’ll be clickable on the video page.</p>
+	<form method="post" enctype="multipart/form-data">
+		<div class="form-group" style="margin-bottom:12px">
+			<label for="title"><strong>Title</strong></label>
+			<input id="title" name="title" required placeholder="e.g., How I top my plants in week 3" style="width:100%;margin-top:6px">
+		</div>
+		<div class="form-group" style="margin-bottom:12px">
+			<label for="description"><strong>Description</strong></label>
+			<textarea id="description" name="description" maxlength="2000" rows="6" placeholder="Add more info: grow setup, lighting, nutrients, links to products, timestamps, etc." style="width:100%;margin-top:6px"></textarea>
+			<div class="tiny" style="text-align:right;opacity:.7;margin-top:4px"><span id="descCount">0</span>/2000</div>
+		</div>
+		<div class="form-group" style="margin-bottom:12px">
+			<label for="video"><strong>Video file</strong></label>
+			<input id="video" type="file" name="video" accept="video/*" required style="display:block;margin-top:6px">
+			<small class="tiny" style="opacity:.7;display:block;margin-top:4px">Max 512MB</small>
+		</div>
+		<div class="form-group" style="margin-bottom:16px">
+			<label for="thumb"><strong>Thumbnail (optional)</strong></label>
+			<input id="thumb" type="file" name="thumb" accept="image/*" style="display:block;margin-top:6px">
+			<small class="tiny" style="opacity:.7;display:block;margin-top:4px">Recommended: 1280×720 (16:9)</small>
+		</div>
+		<button class="btn green">📤 Upload</button>
+	</form>
+</section>
+<script>
+	const desc = document.getElementById('description');
+	const cnt = document.getElementById('descCount');
+	function updateCount(){ cnt.textContent = (desc?.value?.length||0).toString(); }
+	desc?.addEventListener('input', updateCount);
+	updateCount();
+</script>
+{% endblock %}

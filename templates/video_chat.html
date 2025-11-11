@@ -1,0 +1,215 @@
+fix comments and add smiles{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:1100px;margin:0 auto">
+  <h2 style="margin-bottom:12px">🐱 Video Room: <span id="roomName">{{ room }}</span></h2>
+  <div id="videoGrid" class="video-grid-webrtc" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px"></div>
+  <div class="webrtc-controls" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    <button id="joinBtn" class="btn">Join</button>
+    <button id="leaveBtn" class="btn ghost" disabled>Leave</button>
+    <button id="muteBtn" class="btn ghost" disabled>Mute</button>
+    <button id="camBtn" class="btn ghost" disabled>Camera Off</button>
+    <button id="screenBtn" class="btn ghost" disabled>Share Screen</button>
+  </div>
+  <div id="statusBox" class="tiny" style="min-height:24px;opacity:.85"></div>
+  <p class="tiny" style="margin-top:8px">Peer-to-peer over polling signaling (LiteSpeed-friendly). If connections stall, refresh.</p>
+</div>
+
+<style>
+.video-tile{position:relative;background:#000;border:1px solid rgba(0,255,153,.3);border-radius:10px;overflow:hidden}
+.video-tile video{width:100%;height:100%;object-fit:cover;background:#000}
+.video-label{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:6px;font-size:11px;color:var(--green)}
+.speaking-edge{box-shadow:0 0 0 2px var(--green)}
+</style>
+
+<div id="rtcMeta" data-room="{{ room }}" data-user-id="{{ user.id }}" style="display:none"></div>
+<script>
+const meta = document.getElementById('rtcMeta');
+const ROOM = meta.dataset.room;
+const SELF_ID = parseInt(meta.dataset.userId, 10);
+let localStream = null;
+let screenStream = null;
+let peers = new Map(); // peerId -> { pc, videoEl }
+let pollCursor = 0;
+let isMuted = false;
+let camOff = false;
+let joined = false;
+let pollingHandle = null;
+
+const statusBox = document.getElementById('statusBox');
+function log(msg){ statusBox.textContent = msg; }
+function append(msg){ statusBox.textContent = msg; }
+
+function createVideoTile(id, label){
+  const wrap = document.createElement('div');
+  wrap.className = 'video-tile';
+  const vid = document.createElement('video');
+  vid.playsInline = true; vid.autoplay = true; vid.muted = (id === SELF_ID);
+  const lab = document.createElement('div'); lab.className='video-label'; lab.textContent=label;
+  wrap.appendChild(vid); wrap.appendChild(lab);
+  document.getElementById('videoGrid').appendChild(wrap);
+  return {wrap, vid};
+}
+
+async function startLocalMedia(){
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
+      video:{width:{ideal:640},height:{ideal:360},facingMode:'user'}
+    });
+  } catch(e){
+    log('Camera+mic failed, trying audio-only: '+e.name);
+    localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+  }
+  const tile = createVideoTile(SELF_ID, 'You');
+  tile.vid.srcObject = localStream;
+}
+
+function newPeerConnection(peerId){
+  const pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+  localStream?.getTracks().forEach(t=>pc.addTrack(t, localStream));
+  const tile = createVideoTile(peerId, 'User '+peerId);
+  pc.ontrack = ev => { tile.vid.srcObject = ev.streams[0]; };
+  pc.onicecandidate = ev => {
+    if(ev.candidate){
+      sendSignal(peerId,'candidate', JSON.stringify(ev.candidate));
+    }
+  };
+  pc.onconnectionstatechange = ()=>{
+    if(['failed','closed','disconnected'].includes(pc.connectionState)){
+      removePeer(peerId);
+    }
+  };
+  peers.set(peerId,{pc, videoEl: tile.vid, wrap: tile.wrap});
+  return pc;
+}
+
+function removePeer(peerId){
+  const data = peers.get(peerId); if(!data) return;
+  data.pc.close();
+  data.wrap.remove();
+  peers.delete(peerId);
+}
+
+async function joinRoom(){
+  if(joined) return; joined = true;
+  log('Joining…');
+  await startLocalMedia();
+  const res = await fetch(`/api/rtc/join/${ROOM}`, {method:'POST'}).then(r=>r.json());
+  if(!res.success){ log('Join failed'); return; }
+  document.getElementById('joinBtn').disabled = true;
+  document.getElementById('leaveBtn').disabled = false;
+  document.getElementById('muteBtn').disabled = false;
+  document.getElementById('camBtn').disabled = false;
+  document.getElementById('screenBtn').disabled = false;
+  log('Joined. Participants: '+res.participants.length);
+  // Create offers to existing participants
+  for(const pid of res.participants){
+    const pc = newPeerConnection(pid);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    sendSignal(pid,'offer', JSON.stringify(offer));
+  }
+  startPolling();
+}
+
+async function leaveRoom(){
+  if(!joined) return;
+  joined = false;
+  stopPolling();
+  await fetch(`/api/rtc/leave/${ROOM}`, {method:'POST'}).catch(()=>{});
+  peers.forEach((_,pid)=>removePeer(pid));
+  peers.clear();
+  localStream?.getTracks().forEach(t=>t.stop());
+  localStream = null;
+  document.getElementById('videoGrid').innerHTML='';
+  document.getElementById('joinBtn').disabled = false;
+  document.getElementById('leaveBtn').disabled = true;
+  document.getElementById('muteBtn').disabled = true;
+  document.getElementById('camBtn').disabled = true;
+  document.getElementById('screenBtn').disabled = true;
+  log('Left room');
+}
+
+async function sendSignal(targetId, kind, payload){
+  return fetch(`/api/rtc/signal/${ROOM}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({target_id: targetId, kind, payload})
+  }).then(r=>r.json());
+}
+
+async function pollOnce(){
+  const url = `/api/rtc/poll/${ROOM}?since=${pollCursor}`;
+  const data = await fetch(url).then(r=>r.json()).catch(()=>({success:false}));
+  if(!data.success) return;
+  for(const s of data.signals){
+    pollCursor = Math.max(pollCursor, s.id);
+    const peerId = s.sender_id;
+    if(s.kind === 'offer'){
+      const pc = newPeerConnection(peerId);
+      await pc.setRemoteDescription(JSON.parse(s.payload));
+      const ans = await pc.createAnswer();
+      await pc.setLocalDescription(ans);
+      sendSignal(peerId,'answer', JSON.stringify(ans));
+    } else if(s.kind === 'answer'){
+      const obj = peers.get(peerId); if(obj){ obj.pc.setRemoteDescription(JSON.parse(s.payload)); }
+    } else if(s.kind === 'candidate'){
+      const obj = peers.get(peerId); if(obj){ try{ obj.pc.addIceCandidate(JSON.parse(s.payload)); }catch(e){ console.warn('ICE add failed', e); } }
+    } else if(s.kind === 'bye' || s.kind==='leave'){
+      removePeer(peerId);
+    }
+  }
+}
+
+function startPolling(){
+  if(pollingHandle) return;
+  pollingHandle = setInterval(()=>{ pollOnce(); }, 1200);
+  pollOnce();
+}
+function stopPolling(){ if(pollingHandle){ clearInterval(pollingHandle); pollingHandle=null; } }
+
+document.getElementById('joinBtn').addEventListener('click', joinRoom);
+document.getElementById('leaveBtn').addEventListener('click', leaveRoom);
+document.getElementById('muteBtn').addEventListener('click', ()=>{
+  if(!localStream) return;
+  isMuted = !isMuted;
+  localStream.getAudioTracks().forEach(t=> t.enabled = !isMuted);
+  document.getElementById('muteBtn').textContent = isMuted ? 'Unmute' : 'Mute';
+});
+document.getElementById('camBtn').addEventListener('click', ()=>{
+  if(!localStream) return;
+  camOff = !camOff;
+  localStream.getVideoTracks().forEach(t=> t.enabled = !camOff);
+  document.getElementById('camBtn').textContent = camOff ? 'Camera On' : 'Camera Off';
+});
+document.getElementById('screenBtn').addEventListener('click', async ()=>{
+  if(!joined) return;
+  if(screenStream){ // stop sharing
+    screenStream.getTracks().forEach(t=>t.stop());
+    screenStream = null;
+    document.getElementById('screenBtn').textContent='Share Screen';
+    return;
+  }
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({video:true});
+    // Replace video track in peers
+    const newTrack = screenStream.getVideoTracks()[0];
+    peers.forEach(({pc})=>{
+      const senders = pc.getSenders().filter(s=>s.track && s.track.kind==='video');
+      if(senders[0]){ senders[0].replaceTrack(newTrack); }
+    });
+    document.getElementById('screenBtn').textContent='Stop Share';
+    screenStream.getVideoTracks()[0].onended = ()=>{
+      screenStream = null;
+      document.getElementById('screenBtn').textContent='Share Screen';
+    };
+  } catch(e){ log('Screen share failed: '+e.message); }
+});
+
+window.addEventListener('beforeunload', ()=>{ if(joined){ fetch(`/api/rtc/leave/${ROOM}`, {method:'POST'}); } });
+
+if(!('RTCPeerConnection' in window)){
+  log('WebRTC unsupported in this browser.');
+  document.getElementById('joinBtn').disabled = true;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2>{{ playlist.name }}</h2>
+    <a href="{{ url_for('edit_playlist', pid=playlist.id) }}" class="btn">Edit Playlist</a>
+  </div>
+  <div class="meta">Created {{ playlist.created_at.strftime('%Y-%m-%d') }} • {{ videos|length }} videos</div>
+  
+  {% if videos %}
+  <div class="video-grid" style="margin-top: 2rem;">
+    {% for v in videos %}
+    <div class="vcard" style="position:relative">
+      <a href="{{ url_for('watch', vid=v.id) }}">
+        <img class="thumb" src="{{ v.thumbnail or '/static/leaf.png' }}" alt="{{ v.title }}">
+        <div class="vt">{{ v.title }}</div>
+        <div class="meta">{{ v.created_at.strftime('%Y-%m-%d') }}</div>
+      </a>
+      <button class="btn btn-sm" style="margin-top:8px;width:100%" onclick="removeFromPlaylist({{ playlist.id }}, {{ v.id }}, this)">Remove</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>This playlist is empty. Add videos from the video page!</p>
+  {% endif %}
+</section>
+
+<script>
+async function removeFromPlaylist(pid, vid, btn) {
+  if (!confirm('Remove this video from playlist?')) return;
+  const res = await fetch(`/api/playlist/${pid}/remove/${vid}`, {method: 'POST'});
+  const data = await res.json();
+  if (data.success) {
+    btn.closest('.vcard').remove();
+    location.reload();
+  } else {
+    alert(data.error || 'Failed to remove video');
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2>Shorts</h2>
+    {% if user %}
+    <a href="{{ url_for('upload_short') }}" class="btn green">📤 Upload Short</a>
+    {% endif %}
+  </div>
+  
+  <div class="shorts-grid">
+    {% for s in shorts %}
+    <div class="short-card" onclick="openShort({{ s.id }})">
+      {% if s.thumbnail %}
+      <img src="{{ s.thumbnail }}" alt="{{ s.title }}">
+      {% else %}
+      <div class="short-placeholder">
+        <span style="font-size: 3rem">🎬</span>
+      </div>
+      {% endif %}
+      <div class="short-info">
+        <h3>{{ s.title }}</h3>
+        <div class="meta">{{ s.created_at.strftime('%b %d') }}</div>
+      </div>
+    </div>
+    {% else %}
+    <p>No shorts yet. {% if user %}<a href="{{ url_for('upload_short') }}">Upload the first one!</a>{% endif %}</p>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Short viewer modal -->
+<div id="shortModal" class="short-modal" onclick="closeShortModal(event)">
+  <div class="short-modal-content">
+    <button class="short-close" onclick="closeShortModal(event)">&times;</button>
+    <video id="shortPlayer" controls autoplay loop>
+      <source id="shortSource" src="" type="video/mp4">
+    </video>
+    <div class="short-details">
+      <h2 id="shortTitle"></h2>
+      <div id="shortMeta" class="meta"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+.shorts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.short-card {
+  position: relative;
+  aspect-ratio: 9/16;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  background: var(--soft);
+}
+
+.short-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.short-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.short-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--soft) 0%, var(--bg) 100%);
+}
+
+.short-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  color: white;
+}
+
+.short-info h3 {
+  font-size: 0.9rem;
+  margin: 0 0 0.25rem 0;
+  color: white;
+}
+
+/* Short modal viewer */
+.short-modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.95);
+  align-items: center;
+  justify-content: center;
+}
+
+.short-modal.active {
+  display: flex;
+}
+
+.short-modal-content {
+  position: relative;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+}
+
+.short-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+#shortPlayer {
+  width: 100%;
+  max-height: 80vh;
+  border-radius: 12px;
+  background: black;
+}
+
+.short-details {
+  margin-top: 1rem;
+  color: white;
+}
+
+.short-details h2 {
+  margin: 0 0 0.5rem 0;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .shorts-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .short-modal-content {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+</style>
+
+<script>
+const shortsData = {{ shorts | tojson }};
+
+function openShort(id) {
+  const short = shortsData.find(s => s.id === id);
+  if (!short) return;
+  
+  const modal = document.getElementById('shortModal');
+  const player = document.getElementById('shortPlayer');
+  const source = document.getElementById('shortSource');
+  const title = document.getElementById('shortTitle');
+  const meta = document.getElementById('shortMeta');
+  
+  source.src = short.filename;
+  player.load();
+  title.textContent = short.title;
+  meta.textContent = `Uploaded ${new Date(short.created_at).toLocaleDateString()}`;
+  
+  modal.classList.add('active');
+  player.play();
+}
+
+function closeShortModal(event) {
+  if (event.target.id === 'shortModal' || event.target.classList.contains('short-close')) {
+    const modal = document.getElementById('shortModal');
+    const player = document.getElementById('shortPlayer');
+    player.pause();
+    modal.classList.remove('active');
+  }
+}
+
+// Keyboard controls
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeShortModal({target: {id: 'shortModal'}});
+  }
+});
+</script>
+{% endblock %}

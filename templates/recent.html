@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% import "ads.html" as ads %}
+{% block content %}
+<div class="grid2">
+  <section class="card">
+    {% if uploaded %}
+    <h2>📤 Uploaded Videos</h2>
+    <div class="video-grid">
+      {% for v in uploaded %}
+      <a class="vcard" href="{{ url_for('watch', vid=v.id) }}">
+        <img class="thumb" src="{{ v.thumbnail or '/static/leaf.png' }}">
+        <div class="vt">{{ v.title }}</div>
+        <div class="meta">
+          <span>👍 {{ v.like_count or 0 }}</span>
+          <span style="margin-left:8px">{{ v.created_at|date }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+    {{ ads.feed_ad(0) }}
+    
+    {% if youtube %}
+    <h2 style="margin-top:32px">🎬 Featured Grow Tutorials</h2>
+    <div class="video-grid">
+      {% for v in youtube %}
+      <a class="vcard" href="{{ url_for('watch', vid=v.id) }}">
+        <img class="thumb" src="{{ v.thumbnail or '/static/leaf.png' }}">
+        <div class="vt">{{ v.title }}</div>
+        <div class="meta">
+          <span>👍 {{ v.like_count or 0 }}</span>
+          <span style="margin-left:8px">YouTube</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if not uploaded and not youtube %}
+    <h2>Recent</h2>
+    <p>No videos yet.</p>
+    {% endif %}
+  </section>
+  
+  <aside class="card">
+    <h3>Servers</h3>
+    <div class="scroll">
+      {% for s in servers %}
+      <a class="side-video" href="{{ url_for('server', slug=s.slug) }}">🌿 {{ s.name }}</a>
+      {% endfor %}
+    </div>
+    
+    {{ ads.sidebar_ads_widget() }}
+  </aside>
+</div>
+{% endblock %}

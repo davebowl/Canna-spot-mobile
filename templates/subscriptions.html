@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid2">
+  <section class="card">
+    <h2>Subscription Videos</h2>
+    <div class="video-grid">
+      {% for v in videos %}
+      <a class="vcard" href="{{ url_for('watch', vid=v.id) }}">
+        <img class="thumb" src="{{ v.thumbnail or '/static/leaf.png' }}">
+        <div class="vt">{{ v.title }}</div>
+        <div class="meta">#{{ v.uploader_id }}</div>
+      </a>
+      {% else %}
+      <p>No videos from your subscriptions yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+  <aside class="card">
+    <h3>My Subscriptions</h3>
+    <div class="scroll">
+      {% for s in subs %}
+      <div class="side-user">
+        <img src="{{ s.avatar or '/static/avatar.png' }}" class="mini-avatar">
+        {{ s.display }}
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="wrap" style="max-width:1200px;margin:40px auto;padding:20px">
+  <h1 style="margin-bottom:30px;color:var(--green)">Members</h1>
+  
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px">
+    {% for member in members %}
+    <div class="card" style="padding:20px;display:flex;align-items:center;gap:15px">
+      <div style="position:relative">
+        {% if member.avatar %}
+        <img src="{{ url_for('serve_upload', filename='avatars/' + member.avatar) }}" 
+             alt="{{ member.username }}" 
+             style="width:60px;height:60px;border-radius:50%;object-fit:cover">
+        {% else %}
+        <div style="width:60px;height:60px;border-radius:50%;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:30px">
+          👤
+        </div>
+        {% endif %}
+        <!-- Status indicator -->
+        <div style="position:absolute;bottom:0;right:0;width:18px;height:18px;border-radius:50%;border:3px solid var(--card);
+                    background:{% if member.status == 'online' %}#00ff99{% elif member.status == 'too_stoned' %}#ff00ff{% else %}#666{% endif %}"
+             title="{{ member.status|replace('_', ' ')|title }}">
+        </div>
+      </div>
+      
+      <div style="flex:1">
+        <h3 style="margin:0 0 5px 0;font-size:1.1rem">{{ member.username }}</h3>
+        <p style="margin:0;color:#888;font-size:.85rem">
+          {% if member.status == 'online' %}
+            🟢 Online
+          {% elif member.status == 'too_stoned' %}
+            🟣 Too Stoned
+          {% else %}
+            ⚫ Offline
+          {% endif %}
+        </p>
+      </div>
+      
+      <div>
+        {% if member.id in friend_ids %}
+          <button class="btn ghost" disabled style="cursor:not-allowed;opacity:0.5">
+            Friends
+          </button>
+        {% else %}
+          <button class="btn green" onclick="addFriend({{ member.id }})" id="btn-{{ member.id }}">
+            Add Friend
+          </button>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  
+  {% if not members %}
+  <div class="card" style="padding:40px;text-align:center">
+    <p style="color:#888;margin:0">No other members yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+async function addFriend(userId) {
+  const btn = document.getElementById('btn-' + userId);
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  
+  const res = await fetch('/api/friend/add/' + userId, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  
+  if (res.ok) {
+    btn.textContent = 'Request Sent';
+    btn.classList.remove('green');
+    btn.classList.add('ghost');
+    setTimeout(() => {
+      location.reload();
+    }, 1000);
+  } else {
+    const data = await res.json();
+    alert(data.error || 'Failed to send friend request');
+    btn.disabled = false;
+    btn.textContent = 'Add Friend';
+  }
+}
+</script>
+{% endblock %}
