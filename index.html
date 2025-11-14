@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CannaSpot Mobile</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4CAF50">
+  <link rel="icon" href="icon-192.png">
+  <style>
+    body { font-family: sans-serif; background: #222; color: #fff; margin: 0; }
+    .container { max-width: 400px; margin: 40px auto; padding: 20px; background: #333; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+    h1 { color: #4CAF50; }
+    .btn { display: block; width: 100%; padding: 12px; margin: 16px 0; background: #4CAF50; color: #fff; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; }
+    .btn:hover { background: #388E3C; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>CannaSpot Mobile</h1>
+    <p>Welcome to the mobile version! Install this app for a better experience.</p>
+    <button class="btn" onclick="window.location.href='https://your-flask-backend-url'">Open Web App</button>
+    <button class="btn" onclick="subscribeUser()">Enable Notifications</button>
+  </div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+  <script src="push-notify.js"></script>
+</body>
+</html>
