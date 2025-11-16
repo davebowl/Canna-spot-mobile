@@ -220,7 +220,8 @@ def jinja_date(value, fmt: str = "%b %d, %Y"):
 @app.route("/welcome")
 def welcome():
     """Welcome page thanking Gramo Grows - shown before installation"""
-    return render_template("welcome.html")
+    servers = Server.query.order_by(Server.name).all()
+    return render_template("welcome.html", servers=servers, user=current_user())
 
 @app.route("/install", methods=["GET","POST"])
 def install():
@@ -492,13 +493,16 @@ def reset_for_grambo():
 from sqlalchemy import func
 @app.route("/login", methods=["GET","POST"])
 def login():
+    error = None
     if request.method == "POST":
         u = User.query.filter(func.lower(User.username)==request.form["username"].lower()).first()
         import hashlib
         if u and u.password_hash == hashlib.sha256(request.form["password"].encode("utf-8")).hexdigest():
             session["uid"] = u.id
             return redirect(url_for("recent"))
-    return render_template("login.html")
+        else:
+            error = "Invalid username or password. Please try again."
+    return render_template("login.html", error=error)
 
 @app.route("/register", methods=["GET","POST"])
 def register():

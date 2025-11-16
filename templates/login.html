@@ -7,6 +7,9 @@
       <p style="text-align:center;color:#888;margin:8px 0 0 0">Login to CannaSpot</p>
     </div>
     
+    {% if error %}
+      <div style="color:#ff4d4d;text-align:center;margin-bottom:16px;font-weight:600">{{ error }}</div>
+    {% endif %}
     <form method="post" style="padding:0">
       <label style="display:block;margin-bottom:20px">
         <span style="display:block;margin-bottom:8px;font-weight:600;color:var(--green)">Username</span>

@@ -288,14 +288,8 @@ input,textarea,select{
 
 .video-grid{
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 16px;
-}
-
-@media (max-width: 900px) {
-  .video-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .thumb{
