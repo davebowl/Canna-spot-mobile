@@ -1,6 +1,55 @@
-# Real-time main content API for AJAX polling
-from flask import jsonify, render_template_string
+import os, re, secrets, hashlib
+import smtplib
+import ssl
+from email.message import EmailMessage
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from datetime import datetime, date, timedelta
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, flash, abort, jsonify, render_template_string
+from sqlalchemy import func
+from werkzeug.utils import secure_filename
+from markupsafe import escape
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
+
+APP_VERSION = "3.6"
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+VIDEO_DIR = os.path.join(UPLOAD_DIR, "videos")
+THUMB_DIR = os.path.join(UPLOAD_DIR, "thumbnails")
+AVATAR_DIR = os.path.join(UPLOAD_DIR, "avatars")
+
+# Create upload directories if they don't exist
+for dir_path in [UPLOAD_DIR, VIDEO_DIR, THUMB_DIR, AVATAR_DIR, os.path.join(UPLOAD_DIR, "emojis")]:
+    os.makedirs(dir_path, exist_ok=True)
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret")
+
+# Auto-detect database: PostgreSQL > MySQL > SQLite
+database_url = os.environ.get("DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR,'cannaspot.db')}")
+# Fix Heroku/Koyeb postgres:// to postgresql://
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 512MB
+
+# use the centralized models/db module
+from models import (
+    db, User, Server, Channel, Membership, Video, Message, Sponsor, Activity,
+    Playlist, PlaylistVideo, Subscription, VideoLike, WatchLater, Short,
+    Notification, VoiceParticipant, Friendship, DirectMessage, hash_pw, safe_slug, EmailVerification,
+    RtcSignal, RtcParticipant, VideoComment, CustomEmoji, Post, Role, RoleMembership, Advertisement,
+    MusicBot, MusicQueue
+)
+
+# initialize db with the app
+db.init_app(app)
+
+# Real-time main content API for AJAX polling
 @app.route("/api/main-content")
 def api_main_content():
     # Get latest videos and servers
@@ -31,6 +80,7 @@ def api_main_content():
         servers_html += f'<a class="side-video" href="/server/{s.slug}">🌿 {s.name}</a>'
 
     return jsonify({"videos_html": videos_html, "servers_html": servers_html})
+
 # Add bot to server route
 @app.route("/server/<slug>/add-bot", methods=["POST"])
 def add_bot_to_server(slug):
@@ -48,17 +98,6 @@ def add_bot_to_server(slug):
         db.session.add(Membership(user_id=musicbot.id, server_id=s.id))
     db.session.commit()
     return redirect(url_for("server", slug=slug))
-import os, re, secrets, hashlib
-import smtplib
-import ssl
-from email.message import EmailMessage
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from datetime import datetime, date, timedelta
-from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, flash, abort
-from sqlalchemy import func
-from werkzeug.utils import secure_filename
-from markupsafe import escape
-from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
@@ -706,15 +745,18 @@ def recent():
         # Get YouTube videos (from GrowBot) - show after uploaded
         youtube_vids = Video.query.filter_by(uploader_id=bot_id).order_by(Video.created_at.desc()).limit(12).all() if bot_id else []
         
+        # Check for active live video
+        live_video = Video.query.filter_by(is_live=True).order_by(Video.created_at.desc()).first()
+
         # Combine: uploaded first, then YouTube
         vids = uploaded_vids + youtube_vids
-        
+
         # Add like counts to each video
         for v in vids:
             v.like_count = VideoLike.query.filter_by(video_id=v.id).count()
-        
+
         servers = Server.query.order_by(Server.name).all()
-        return render_template("recent.html", videos=vids, uploaded=uploaded_vids, youtube=youtube_vids, servers=servers, user=current_user())
+        return render_template("recent.html", videos=vids, uploaded=uploaded_vids, youtube=youtube_vids, servers=servers, user=current_user(), live_video=live_video)
     except Exception as e:
         # Database not initialized, redirect to welcome
         print(f"Error loading home page: {e}")
@@ -1583,7 +1625,12 @@ def go_live():
     u = current_user()
     if not u:
         return redirect(url_for("login"))
-    return render_template("go_live.html", user=u)
+    # Set the most recent video by this user as live (for demo; in production, create a new live video)
+    v = Video.query.filter_by(uploader_id=u.id).order_by(Video.created_at.desc()).first()
+    if v:
+        v.is_live = True
+        db.session.commit()
+    return render_template("go_live.html", user=u, live_video=v)
 
 # --- Posts helpers and routes ---
 import re as _re

@@ -80,6 +80,7 @@ class Video(db.Model):
     uploader_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     view_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_live = db.Column(db.Boolean, default=False)  # True if this video is a live stream
 
 
 class Message(db.Model):

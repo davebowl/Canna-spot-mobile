@@ -2,7 +2,15 @@
 {% import "ads.html" as ads %}
 {% block content %}
 <div class="grid2" id="mainContent">
-  <!-- ...existing code... -->
+  {% if live_video %}
+    <section class="card live-card" id="liveSection">
+      <h2 style="color:red">LIVE NOW</h2>
+      <div class="video-player">
+        <video src="/uploads/videos/{{ live_video.filename }}" controls autoplay style="width:100%;max-width:640px;"></video>
+        <div class="live-title">{{ live_video.title }}</div>
+      </div>
+    </section>
+  {% endif %}
   <section class="card" id="videoSection">
     <!-- Video list will be loaded here -->
     {{ ads.feed_ad(0) }}
