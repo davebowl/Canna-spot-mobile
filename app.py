@@ -1,3 +1,111 @@
+# Real-time main content API for AJAX polling
+from flask import jsonify, render_template_string
+
+@app.route("/api/main-content")
+def api_main_content():
+    # Get latest videos and servers
+    bot = User.query.filter_by(username="GrowBot").first()
+    bot_id = bot.id if bot else None
+    uploaded_vids = Video.query.filter(Video.uploader_id != bot_id).order_by(Video.created_at.desc()).limit(12).all() if bot_id else []
+    youtube_vids = Video.query.filter_by(uploader_id=bot_id).order_by(Video.created_at.desc()).limit(12).all() if bot_id else []
+    servers = Server.query.order_by(Server.name).all()
+
+    # Render video HTML
+    videos_html = ""
+    if uploaded_vids:
+        videos_html += '<h2>📤 Uploaded Videos</h2><div class="video-grid">'
+        for v in uploaded_vids:
+            videos_html += f'<a class="vcard" href="/watch/{v.id}"><img class="thumb" src="{v.thumbnail or "/static/leaf.png"}"><div class="vt">{v.title}</div><div class="meta"><span>👍 {getattr(v, "like_count", 0)}</span><span style="margin-left:8px">{v.created_at.strftime("%b %d, %Y")}</span></div></a>'
+        videos_html += '</div>'
+    if youtube_vids:
+        videos_html += '<h2 style="margin-top:32px">🎬 Featured Grow Tutorials</h2><div class="video-grid">'
+        for v in youtube_vids:
+            videos_html += f'<a class="vcard" href="/watch/{v.id}"><img class="thumb" src="{v.thumbnail or "/static/leaf.png"}"><div class="vt">{v.title}</div><div class="meta"><span>👍 {getattr(v, "like_count", 0)}</span><span style="margin-left:8px">YouTube</span></div></a>'
+        videos_html += '</div>'
+    if not uploaded_vids and not youtube_vids:
+        videos_html += '<h2>Recent</h2><p>No videos yet.</p>'
+
+    # Render server HTML
+    servers_html = ""
+    for s in servers:
+        servers_html += f'<a class="side-video" href="/server/{s.slug}">🌿 {s.name}</a>'
+
+    return jsonify({"videos_html": videos_html, "servers_html": servers_html})
+# Add bot to server route
+@app.route("/server/<slug>/add-bot", methods=["POST"])
+def add_bot_to_server(slug):
+    u = current_user()
+    s = Server.query.filter_by(slug=slug).first_or_404()
+    if not u or s.owner_id != u.id:
+        return "Only server owners can add bots", 403
+    # Add GrowBot
+    growbot = User.query.filter_by(username="GrowBot").first()
+    if growbot and not Membership.query.filter_by(user_id=growbot.id, server_id=s.id).first():
+        db.session.add(Membership(user_id=growbot.id, server_id=s.id))
+    # Add MusicBot
+    musicbot = User.query.filter_by(username="MusicBot").first()
+    if musicbot and not Membership.query.filter_by(user_id=musicbot.id, server_id=s.id).first():
+        db.session.add(Membership(user_id=musicbot.id, server_id=s.id))
+    db.session.commit()
+    return redirect(url_for("server", slug=slug))
+import os, re, secrets, hashlib
+import smtplib
+import ssl
+from email.message import EmailMessage
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from datetime import datetime, date, timedelta
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, flash, abort
+from sqlalchemy import func
+from werkzeug.utils import secure_filename
+from markupsafe import escape
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+APP_VERSION = "3.6"
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+VIDEO_DIR = os.path.join(UPLOAD_DIR, "videos")
+THUMB_DIR = os.path.join(UPLOAD_DIR, "thumbnails")
+AVATAR_DIR = os.path.join(UPLOAD_DIR, "avatars")
+
+# Create upload directories if they don't exist
+for dir_path in [UPLOAD_DIR, VIDEO_DIR, THUMB_DIR, AVATAR_DIR, os.path.join(UPLOAD_DIR, "emojis")]:
+    os.makedirs(dir_path, exist_ok=True)
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret")
+
+# Auto-detect database: PostgreSQL > MySQL > SQLite
+database_url = os.environ.get("DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR,'cannaspot.db')}")
+# Fix Heroku/Koyeb postgres:// to postgresql://
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 512MB
+
+# use the centralized models/db module
+from models import (
+    db, User, Server, Channel, Membership, Video, Message, Sponsor, Activity,
+    Playlist, PlaylistVideo, Subscription, VideoLike, WatchLater, Short,
+    Notification, VoiceParticipant, Friendship, DirectMessage, hash_pw, safe_slug, EmailVerification,
+    RtcSignal, RtcParticipant, VideoComment, CustomEmoji, Post, Role, RoleMembership, Advertisement,
+    MusicBot, MusicQueue
+)
+
+# initialize db with the app
+db.init_app(app)
+
+@app.route("/users")
+def list_users():
+    u = current_user()
+    if not u or not u.is_admin:
+        return "Admins only", 403
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template("users.html", users=users, user=u)
 
 import os, re, secrets, hashlib
 import smtplib
@@ -650,8 +758,10 @@ def watch(vid):
     comments = [{"author": user.username, "text": comment.content, "created_at": comment.created_at} 
                 for comment, user in comments_data]
     
+    # Get uploader info
+    uploader = User.query.get(v.uploader_id) if v.uploader_id else None
     more = Video.query.order_by(Video.created_at.desc()).limit(10).all()
-    return render_template("watch.html", video=v, related=more, comments=comments, user=u)
+    return render_template("watch.html", video=v, related=more, comments=comments, user=u, uploader=uploader)
 
 from werkzeug.utils import secure_filename
 @app.route("/upload", methods=["GET","POST"])

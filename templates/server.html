@@ -128,6 +128,9 @@
         <a href="{{ url_for('setup_bot', slug=server.slug) }}" class="btn" style="background:#F59E0B;color:#000">
           ⚡ Run Admin Bot
         </a>
+        <form method="post" action="{{ url_for('add_bot_to_server', slug=server.slug) }}" style="margin-top:12px">
+          <button type="submit" class="btn" style="background:#3498DB;color:#fff">🤖 Add Server Bots</button>
+        </form>
       </div>
       {% endif %}
       <!-- Debug info (remove after testing) -->

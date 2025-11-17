@@ -243,30 +243,54 @@ a{color:var(--green);text-decoration:none}
   margin-bottom: 16px;
 }
 
-.btn{
+/* Uniform video player action buttons */
+.btn {
   background: var(--green);
   color: #000;
   border: 0;
   border-radius: 10px;
-  padding: 10px 16px;
+  padding: 10px 18px;
   font-weight: 700;
   cursor: pointer;
   font-size: 1rem;
   min-height: 44px;
+  min-width: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   touch-action: manipulation;
+  transition: background .2s, color .2s, box-shadow .2s;
 }
-.btn.ghost{
+.btn.player-action {
+  background: #222;
+  color: var(--green);
+  border: 1px solid var(--green);
+  margin-right: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0,255,153,.08);
+}
+.btn.player-action:last-child {
+  margin-right: 0;
+}
+.btn.player-action:hover {
+  background: var(--green);
+  color: #000;
+}
+.btn.ghost {
   background: transparent;
   border: 1px solid var(--green);
   color: var(--green);
 }
-.btn.small{
+.btn.small {
   padding: 6px 12px;
   font-size: .9rem;
   min-height: 36px;
+}
+.video-player-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-bottom: 8px;
 }
 
 h1{font-size: 1.75rem;margin: 8px 0 16px}

@@ -32,5 +32,14 @@
 	function updateCount(){ cnt.textContent = (desc?.value?.length||0).toString(); }
 	desc?.addEventListener('input', updateCount);
 	updateCount();
+
+	// Fix for mobile file input reopening
+	function resetFileInput(input) {
+		input.value = '';
+	}
+	const videoInput = document.getElementById('video');
+	const thumbInput = document.getElementById('thumb');
+	videoInput?.addEventListener('click', function() { resetFileInput(videoInput); });
+	thumbInput?.addEventListener('click', function() { resetFileInput(thumbInput); });
 </script>
 {% endblock %}

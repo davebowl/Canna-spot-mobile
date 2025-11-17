@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>All Users</h1>
+<table class="card" style="width:100%;margin-top:20px">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Admin</th>
+      <th>Joined</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.id }}</td>
+      <td>{{ u.username }}</td>
+      <td>{{ u.email }}</td>
+      <td>{% if u.is_admin %}✔️{% else %}—{% endif %}</td>
+      <td>{{ u.created_at|date }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

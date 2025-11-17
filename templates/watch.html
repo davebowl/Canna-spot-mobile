@@ -20,7 +20,12 @@
       
       <!-- Enhanced Video Controls -->
       <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
-        <div>
+        <div class="video-player-actions">
+          <button id="fullscreenBtn" class="btn player-action">⛶ Fullscreen</button>
+          <button id="downloadBtn" class="btn player-action">⬇ Download</button>
+          <button id="shareBtn" class="btn player-action">📤 Share</button>
+        </div>
+        <div class="video-player-speed">
           <label style="font-size:0.9rem;opacity:0.8">Playback Speed:</label>
           <select id="speedControl" style="padding:6px;background:var(--soft);border:1px solid var(--green);border-radius:4px;color:var(--text)">
             <option value="0.25">0.25x</option>
@@ -32,8 +37,6 @@
             <option value="2">2x</option>
           </select>
         </div>
-        <button id="fullscreenBtn" class="btn ghost" style="padding:8px 16px">⛶ Fullscreen</button>
-        <button id="downloadBtn" class="btn ghost" style="padding:8px 16px">⬇ Download</button>
       </div>
     {% endif %}
     {% if video.uploader_id and user %}
@@ -47,35 +50,43 @@
         <span>👁️ {{ video.view_count or 0 }} views</span>
         <span style="margin-left:15px">Uploaded {{ video.created_at|date }}</span>
       </div>
+      {% if uploader %}
+      <div class="video-uploader" style="margin:10px 0 0 0;font-size:1.05rem;opacity:.85">
+        <span>Posted by <strong style="color:var(--green)">{{ uploader.username }}</strong></span>
+      </div>
+      {% endif %}
+      {% if video.description %}
+      <div class="video-headline" style="margin:8px 0 0 0;font-size:1.1rem;opacity:.9;color:#caffda">
+        {{ video.description }}
+      </div>
+      {% endif %}
       <div class="video-actions">
-        <button id="likeBtn" class="btn green" data-vid="{{ video.id }}">👍 Like</button>
-        <button id="laterBtn" class="btn ghost" data-vid="{{ video.id }}">⏰ Watch Later</button>
-        <div class="dropdown" style="position:relative;display:inline-block">
-          <button id="playlistToggle" class="btn ghost" onclick="togglePlaylistMenu()">📋 Add to Playlist</button>
-          <div id="playlistMenu" class="playlist-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:220px;z-index:20">
-            {% if user %}
-            <div style="margin-bottom:6px">
-              <a href="{{ url_for('create_playlist') }}" class="menu-item" style="display:block">+ New Playlist</a>
-            </div>
-            <div id="userPlaylists" class="menu-list"></div>
-            {% else %}
-            <p style="margin:0"><a href="{{ url_for('login') }}">Login</a> to add to playlists</p>
-            {% endif %}
+        <button id="likeBtn" class="btn player-action" data-vid="{{ video.id }}">👍 Like</button>
+        <button id="laterBtn" class="btn player-action" data-vid="{{ video.id }}">⏰ Watch Later</button>
+        <!-- Add to Playlist Dropdown -->
+        <button id="playlistToggle" class="btn player-action" onclick="togglePlaylistMenu()">📋 Add to Playlist</button>
+        <div id="playlistMenu" class="playlist-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:220px;z-index:20">
+          {% if user %}
+          <div style="margin-bottom:6px">
+            <a href="{{ url_for('create_playlist') }}" class="menu-item" style="display:block">+ New Playlist</a>
           </div>
+          <div id="userPlaylists" class="menu-list"></div>
+          {% else %}
+          <p style="margin:0"><a href="{{ url_for('login') }}">Login</a> to add to playlists</p>
+          {% endif %}
         </div>
-        <div class="dropdown" style="position:relative;display:inline-block">
-          <button id="shareToggle" class="btn ghost" onclick="toggleShareMenu()">📤 Share</button>
-          <div id="shareMenu" class="share-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:260px;z-index:20">
-            <div class="menu-item" onclick="shareNative()">📱 Share from your device</div>
-            <div class="menu-item" onclick="copyShareLink()">🔗 Copy link</div>
-            <hr class="menu-sep">
-            <a class="menu-item" target="_blank" rel="noopener" id="shareX">𝕏 Share to X</a>
-            <a class="menu-item" target="_blank" rel="noopener" id="shareFacebook">📘 Share to Facebook</a>
-            <a class="menu-item" target="_blank" rel="noopener" id="shareReddit">👽 Share to Reddit</a>
-            <a class="menu-item" target="_blank" rel="noopener" id="shareWhatsApp">🟢 Share to WhatsApp</a>
-            <a class="menu-item" target="_blank" rel="noopener" id="shareTelegram">✈️ Share to Telegram</a>
-            <a class="menu-item" target="_blank" rel="noopener" id="shareEmail">✉️ Share via Email</a>
-          </div>
+        <!-- Share Dropdown -->
+        <button id="shareToggle" class="btn player-action" onclick="toggleShareMenu()">📤 Share</button>
+        <div id="shareMenu" class="share-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:260px;z-index:20">
+          <div class="menu-item" onclick="shareNative()">📱 Share from your device</div>
+          <div class="menu-item" onclick="copyShareLink()">🔗 Copy link</div>
+          <hr class="menu-sep">
+          <a class="menu-item" target="_blank" rel="noopener" id="shareX">𝕏 Share to X</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareFacebook">📘 Share to Facebook</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareReddit">👽 Share to Reddit</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareWhatsApp">🟢 Share to WhatsApp</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareTelegram">✈️ Share to Telegram</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareEmail">✉️ Share via Email</a>
         </div>
       </div>
       <div class="video-desc">{{ video.description }}</div>
