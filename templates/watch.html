@@ -108,6 +108,9 @@
           <div id="emojiDropdown" style="display:none;position:absolute;bottom:100px;right:8px;z-index:1000;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:180px;box-shadow:0 2px 12px rgba(0,0,0,.18)"></div>
           <textarea id="commentText" name="text" placeholder="Add a comment... 😎" required style="width:100%;min-height:80px;padding:12px;padding-right:50px"></textarea>
           <button type="button" id="emojiBtn" class="btn ghost" style="position:absolute;right:8px;top:8px;padding:6px 10px;min-height:auto" title="Add emoji">😀</button>
+          <style>
+            #emojiDropdown { top: -60px !important; bottom: auto !important; }
+          </style>
         </div>
         <button type="submit" class="btn green" style="margin-top:8px">💬 Post Comment</button>
         <script>
