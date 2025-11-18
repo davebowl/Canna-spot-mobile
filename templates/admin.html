@@ -100,6 +100,26 @@
                 </form>
               {% endif %}
             {% endif %}
+            {% if usr.status != 'banned' and usr.id != user.id %}
+              <form method="post" style="display:inline" onsubmit="return confirm('Ban user {{ usr.username }}?')">
+                <input type="hidden" name="action" value="ban_user">
+                <input type="hidden" name="user_id" value="{{ usr.id }}">
+                <button class="btn small action-btn danger">Ban</button>
+              </form>
+            {% elif usr.status == 'banned' and usr.id != user.id %}
+              <form method="post" style="display:inline" onsubmit="return confirm('Unban user {{ usr.username }}?')">
+                <input type="hidden" name="action" value="unban_user">
+                <input type="hidden" name="user_id" value="{{ usr.id }}">
+                <button class="btn small action-btn">Unban</button>
+              </form>
+            {% endif %}
+            {% if usr.id != user.id %}
+              <form method="post" style="display:inline" onsubmit="return confirm('Reset password for {{ usr.username }}?')">
+                <input type="hidden" name="action" value="reset_password">
+                <input type="hidden" name="user_id" value="{{ usr.id }}">
+                <button class="btn small action-btn warning">Reset Password</button>
+              </form>
+            {% endif %}
             {% if usr.id != user.id %}
               <form method="post" style="display:inline" onsubmit="return confirm('Delete user {{ usr.username }}?')">
                 <input type="hidden" name="action" value="delete_user">
@@ -145,6 +165,17 @@
               <input type="hidden" name="action" value="delete_video">
               <input type="hidden" name="video_id" value="{{ v.id }}">
               <button class="btn small action-btn danger">Delete</button>
+            </form>
+            <form method="post" style="display:inline">
+              <input type="hidden" name="action" value="feature_video">
+              <input type="hidden" name="video_id" value="{{ v.id }}">
+              <button class="btn small action-btn" style="background:gold;color:#000">Feature</button>
+            </form>
+            <form method="post" style="display:inline">
+              <input type="hidden" name="action" value="edit_video">
+              <input type="hidden" name="video_id" value="{{ v.id }}">
+              <input type="text" name="new_title" value="{{ v.title }}" style="width:120px;font-size:0.9rem;margin-right:4px">
+              <button class="btn small action-btn">Save Title</button>
             </form>
           </td>
         </tr>
@@ -196,6 +227,17 @@
               <input type="hidden" name="action" value="delete_server">
               <input type="hidden" name="server_id" value="{{ s.id }}">
               <button class="btn small action-btn danger">Delete</button>
+            </form>
+            <form method="post" style="display:inline">
+              <input type="hidden" name="action" value="edit_server">
+              <input type="hidden" name="server_id" value="{{ s.id }}">
+              <input type="text" name="new_name" value="{{ s.name }}" style="width:120px;font-size:0.9rem;margin-right:4px">
+              <button class="btn small action-btn">Save Name</button>
+            </form>
+            <form method="post" style="display:inline">
+              <input type="hidden" name="action" value="manage_members">
+              <input type="hidden" name="server_id" value="{{ s.id }}">
+              <button class="btn small action-btn">Members</button>
             </form>
           </td>
         </tr>

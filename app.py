@@ -1122,18 +1122,46 @@ def admin_panel():
         # User management
         if action == "make_admin":
             uid = int(request.form.get("user_id"))
-            x = User.query.get(uid); 
-            if x: 
-                x.is_admin = True; db.session.commit()
+            x = User.query.get(uid)
+            if x:
+                x.is_admin = True
+                db.session.commit()
                 flash(f"✅ {x.username} is now an admin", "success")
-        
+
         elif action == "remove_admin":
             uid = int(request.form.get("user_id"))
             x = User.query.get(uid)
             if x and x.id != u.id:  # Can't demote yourself
-                x.is_admin = False; db.session.commit()
+                x.is_admin = False
+                db.session.commit()
                 flash(f"✅ Removed admin from {x.username}", "success")
-        
+
+        elif action == "ban_user":
+            uid = int(request.form.get("user_id"))
+            x = User.query.get(uid)
+            if x and x.id != u.id and x.status != "banned":
+                x.status = "banned"
+                db.session.commit()
+                flash(f"🚫 Banned user {x.username}", "warning")
+
+        elif action == "unban_user":
+            uid = int(request.form.get("user_id"))
+            x = User.query.get(uid)
+            if x and x.status == "banned":
+                x.status = "online"
+                db.session.commit()
+                flash(f"✅ Unbanned user {x.username}", "success")
+
+        elif action == "reset_password":
+            uid = int(request.form.get("user_id"))
+            x = User.query.get(uid)
+            if x and x.id != u.id:
+                # Generate a random password and set it
+                new_pw = secrets.token_urlsafe(8)
+                x.password_hash = hash_pw(new_pw)
+                db.session.commit()
+                flash(f"🔑 Password for {x.username} reset to: {new_pw}", "success")
+
         elif action == "delete_user":
             uid = int(request.form.get("user_id"))
             x = User.query.get(uid)
@@ -1171,6 +1199,23 @@ def admin_panel():
                 db.session.delete(v)
                 db.session.commit()
                 flash(f"🗑️ Deleted video: {v.title}", "warning")
+
+        elif action == "feature_video":
+            vid = int(request.form.get("video_id"))
+            v = Video.query.get(vid)
+            if v:
+                v.is_live = True
+                db.session.commit()
+                flash(f"🌟 Featured video: {v.title}", "success")
+
+        elif action == "edit_video":
+            vid = int(request.form.get("video_id"))
+            new_title = request.form.get("new_title", "").strip()
+            v = Video.query.get(vid)
+            if v and new_title:
+                v.title = new_title
+                db.session.commit()
+                flash(f"✏️ Updated video title to: {new_title}", "success")
         
         # Server management
         elif action == "delete_server":
@@ -1186,6 +1231,25 @@ def admin_panel():
                 db.session.delete(s)
                 db.session.commit()
                 flash(f"🗑️ Deleted server: {s.name}", "warning")
+
+        elif action == "edit_server":
+            sid = int(request.form.get("server_id"))
+            new_name = request.form.get("new_name", "").strip()
+            s = Server.query.get(sid)
+            if s and new_name:
+                s.name = new_name
+                s.slug = safe_slug(new_name)
+                db.session.commit()
+                flash(f"✏️ Updated server name to: {new_name}", "success")
+
+        elif action == "manage_members":
+            sid = int(request.form.get("server_id"))
+            s = Server.query.get(sid)
+            if s:
+                members = Membership.query.filter_by(server_id=sid).all()
+                member_ids = [m.user_id for m in members]
+                member_users = User.query.filter(User.id.in_(member_ids)).all()
+                flash(f"👥 Members for server '{s.name}': {[u.username for u in member_users]}", "success")
         
         # Sponsor management
         elif action == "add_sponsor":
