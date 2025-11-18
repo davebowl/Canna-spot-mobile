@@ -54,6 +54,33 @@
     <button class="tab-btn" onclick="showTab('ads')">📢 Ads</button>
     <button class="tab-btn" onclick="showTab('emojis')">😀 Emojis</button>
     <button class="tab-btn" onclick="showTab('messages')">💬 Messages</button>
+    <button class="tab-btn" onclick="showTab('activity')">📜 Activity</button>
+    <!-- Activity Tab -->
+    <div id="tab-activity" class="tab-content card">
+      <h2>Site Activity Log</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Event</th>
+            <th>Data</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for act in activity_log %}
+          <tr>
+            <td>{{ act.id }}</td>
+            <td>{{ act.event }}</td>
+            <td style="max-width:400px;word-break:break-word">{{ act.data }}</td>
+            <td>{{ act.created_at|date('%b %d, %Y %H:%M') }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;opacity:0.7;padding:20px">No activity records found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
   
   <!-- Users Tab -->

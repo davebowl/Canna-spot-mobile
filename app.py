@@ -1388,10 +1388,11 @@ def admin_panel():
                       .order_by(Message.created_at.desc())
                       .limit(100).all())
     
+    activity_log = Activity.query.order_by(Activity.created_at.desc()).limit(100).all()
     return render_template("admin.html", user=u, sponsors=sponsors, stats=stats, 
                          users=users, videos=videos, servers=servers, 
                          recent_messages=recent_messages, custom_emojis=custom_emojis,
-                         advertisements=advertisements)
+                         advertisements=advertisements, activity_log=activity_log)
 
 @app.route("/admin/ad/create", methods=["POST"])
 def admin_create_ad():

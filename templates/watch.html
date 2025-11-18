@@ -18,24 +18,46 @@
       <!-- Local video file with enhanced controls -->
       <video id="videoPlayer" controls poster="{{ video.thumbnail or '/static/leaf.png' }}" src="{{ video.filename }}" class="video-player"></video>
       
-      <!-- Enhanced Video Controls -->
-      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
-        <div class="video-player-actions">
-          <button id="fullscreenBtn" class="btn player-action">⛶ Fullscreen</button>
-          <button id="downloadBtn" class="btn player-action">⬇ Download</button>
-          <button id="shareBtn" class="btn player-action">📤 Share</button>
+      <!-- Unified Player Controls -->
+      <div class="player-controls" style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <button id="likeBtn" class="btn player-action" data-vid="{{ video.id }}">👍 Like</button>
+        <button id="laterBtn" class="btn player-action" data-vid="{{ video.id }}">⏰ Watch Later</button>
+        <button id="playlistToggle" class="btn player-action" onclick="togglePlaylistMenu()">📋 Add to Playlist</button>
+        <button id="shareToggle" class="btn player-action" onclick="toggleShareMenu()">📤 Share</button>
+        <button id="fullscreenBtn" class="btn player-action">⛶ Fullscreen</button>
+        <button id="downloadBtn" class="btn player-action">⬇ Download</button>
+        <label for="speedControl" style="font-size:0.9rem;opacity:0.8;margin-left:8px">Speed:</label>
+        <select id="speedControl" style="padding:6px;background:var(--soft);border:1px solid var(--green);border-radius:4px;color:var(--text)">
+          <option value="0.25">0.25x</option>
+          <option value="0.5">0.5x</option>
+          <option value="0.75">0.75x</option>
+          <option value="1" selected>Normal</option>
+          <option value="1.25">1.25x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2">2x</option>
+        </select>
+        <!-- Playlist Dropdown (outside button) -->
+        <div id="playlistMenu" class="playlist-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:220px;z-index:20">
+          {% if user %}
+          <div style="margin-bottom:6px">
+            <a href="{{ url_for('create_playlist') }}" class="menu-item" style="display:block">+ New Playlist</a>
+          </div>
+          <div id="userPlaylists" class="menu-list"></div>
+          {% else %}
+          <p style="margin:0"><a href="{{ url_for('login') }}">Login</a> to add to playlists</p>
+          {% endif %}
         </div>
-        <div class="video-player-speed">
-          <label style="font-size:0.9rem;opacity:0.8">Playback Speed:</label>
-          <select id="speedControl" style="padding:6px;background:var(--soft);border:1px solid var(--green);border-radius:4px;color:var(--text)">
-            <option value="0.25">0.25x</option>
-            <option value="0.5">0.5x</option>
-            <option value="0.75">0.75x</option>
-            <option value="1" selected>Normal</option>
-            <option value="1.25">1.25x</option>
-            <option value="1.5">1.5x</option>
-            <option value="2">2x</option>
-          </select>
+        <!-- Share Dropdown (outside button) -->
+        <div id="shareMenu" class="share-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:260px;z-index:20">
+          <div class="menu-item" onclick="shareNative()">📱 Share from your device</div>
+          <div class="menu-item" onclick="copyShareLink()">🔗 Copy link</div>
+          <hr class="menu-sep">
+          <a class="menu-item" target="_blank" rel="noopener" id="shareX">𝕏 Share to X</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareFacebook">📘 Share to Facebook</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareReddit">👽 Share to Reddit</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareWhatsApp">🟢 Share to WhatsApp</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareTelegram">✈️ Share to Telegram</a>
+          <a class="menu-item" target="_blank" rel="noopener" id="shareEmail">✉️ Share via Email</a>
         </div>
       </div>
     {% endif %}
@@ -60,35 +82,7 @@
         {{ video.description }}
       </div>
       {% endif %}
-      <div class="video-actions">
-        <button id="likeBtn" class="btn player-action" data-vid="{{ video.id }}">👍 Like</button>
-        <button id="laterBtn" class="btn player-action" data-vid="{{ video.id }}">⏰ Watch Later</button>
-        <!-- Add to Playlist Dropdown -->
-        <button id="playlistToggle" class="btn player-action" onclick="togglePlaylistMenu()">📋 Add to Playlist</button>
-        <div id="playlistMenu" class="playlist-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:220px;z-index:20">
-          {% if user %}
-          <div style="margin-bottom:6px">
-            <a href="{{ url_for('create_playlist') }}" class="menu-item" style="display:block">+ New Playlist</a>
-          </div>
-          <div id="userPlaylists" class="menu-list"></div>
-          {% else %}
-          <p style="margin:0"><a href="{{ url_for('login') }}">Login</a> to add to playlists</p>
-          {% endif %}
-        </div>
-        <!-- Share Dropdown -->
-        <button id="shareToggle" class="btn player-action" onclick="toggleShareMenu()">📤 Share</button>
-        <div id="shareMenu" class="share-menu" style="display:none;position:absolute;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:260px;z-index:20">
-          <div class="menu-item" onclick="shareNative()">📱 Share from your device</div>
-          <div class="menu-item" onclick="copyShareLink()">🔗 Copy link</div>
-          <hr class="menu-sep">
-          <a class="menu-item" target="_blank" rel="noopener" id="shareX">𝕏 Share to X</a>
-          <a class="menu-item" target="_blank" rel="noopener" id="shareFacebook">📘 Share to Facebook</a>
-          <a class="menu-item" target="_blank" rel="noopener" id="shareReddit">👽 Share to Reddit</a>
-          <a class="menu-item" target="_blank" rel="noopener" id="shareWhatsApp">🟢 Share to WhatsApp</a>
-          <a class="menu-item" target="_blank" rel="noopener" id="shareTelegram">✈️ Share to Telegram</a>
-          <a class="menu-item" target="_blank" rel="noopener" id="shareEmail">✉️ Share via Email</a>
-        </div>
-      </div>
+      <!-- video-actions removed: now unified in player-controls above -->
       <div class="video-desc">{{ video.description }}</div>
     </div>
     <div class="video-comments">
