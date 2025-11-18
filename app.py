@@ -1076,7 +1076,16 @@ def my_profile():
     u = current_user()
     if not u: return redirect(url_for("login"))
     if request.method == "POST":
-        u.display = request.form.get("display") or u.display
+        new_uname = request.form.get("uname", u.uname).strip()
+        new_dname = request.form.get("dname", u.dname).strip()
+        # Only update if not taken by another user
+        if new_uname and new_uname != u.uname:
+            if not User.query.filter_by(uname=new_uname).first():
+                u.uname = new_uname
+            else:
+                flash("❌ Username already taken.", "error")
+                return redirect(url_for("my_profile"))
+        u.dname = new_dname or u.dname
         u.profile_html = request.form.get("profile_html")[:5000]
         db.session.commit()
         flash("✅ Profile updated successfully!", "success")

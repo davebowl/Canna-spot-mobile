@@ -38,8 +38,12 @@
   <form method="post" class="card" style="padding:20px">
     <h3 style="margin:0 0 15px 0">Profile Settings</h3>
     <label style="display:block;margin-bottom:20px">
+      <strong>Username</strong>
+      <input name="uname" value="{{ user.uname }}" style="width:100%;margin-top:8px">
+    </label>
+    <label style="display:block;margin-bottom:20px">
       <strong>Display Name</strong>
-      <input name="display" value="{{ user.display }}" style="width:100%;margin-top:8px">
+      <input name="dname" value="{{ user.dname }}" style="width:100%;margin-top:8px">
     </label>
     
     <div class="code-widget">

@@ -8,41 +8,41 @@ db = SQLAlchemy()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    uname = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    display = db.Column(db.String(120))
-    password_hash = db.Column(db.String(256), nullable=False)
+    dname = db.Column(db.String(120))
+    pw_hash = db.Column(db.String(256), nullable=False)
     avatar = db.Column(db.String(255))
-    is_admin = db.Column(db.Boolean, default=False)
-    profile_html = db.Column(db.Text)
+    admin = db.Column(db.Boolean, default=False)
+    p_html = db.Column(db.Text)
     status = db.Column(db.String(20), default="online")  # online, offline, too_stoned
-    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    seen = db.Column(db.DateTime, default=datetime.utcnow)
+    created = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Server(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     slug = db.Column(db.String(140), unique=True, nullable=False)
-    owner_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    server_icon = db.Column(db.String(255))  # Path to custom server icon image
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    owner = db.Column(db.Integer, db.ForeignKey("user.id"))
+    icon = db.Column(db.String(255))  # Path to custom server icon image
+    created = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Channel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    server_id = db.Column(db.Integer, db.ForeignKey("server.id"))
+    server = db.Column(db.Integer, db.ForeignKey("server.id"))
     name = db.Column(db.String(120))
-    is_voice = db.Column(db.Boolean, default=False)  # True for voice channels
-    category = db.Column(db.String(100))  # Category name for grouping
-    position = db.Column(db.Integer, default=0)  # Display order
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    voice = db.Column(db.Boolean, default=False)  # True for voice channels
+    cat = db.Column(db.String(100))  # Category name for grouping
+    pos = db.Column(db.Integer, default=0)  # Display order
+    created = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Membership(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    server_id = db.Column(db.Integer, db.ForeignKey("server.id"))
+    user = db.Column(db.Integer, db.ForeignKey("user.id"))
+    server = db.Column(db.Integer, db.ForeignKey("server.id"))
 
 
 class Role(db.Model):
