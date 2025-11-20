@@ -81,6 +81,130 @@ def api_main_content():
 
     return jsonify({"videos_html": videos_html, "servers_html": servers_html})
 
+# Move these route decorators below app initialization
+@app.route("/admin/site-settings", methods=["POST"])
+def admin_site_settings():
+    u = current_user()
+    if not u or not u.is_admin:
+        return redirect(url_for("login"))
+    from models import SiteSetting
+    site_settings = SiteSetting.query.first()
+    if not site_settings:
+        site_settings = SiteSetting()
+        db.session.add(site_settings)
+    site_settings.site_name = request.form.get("site_name", site_settings.site_name)
+    site_settings.maintenance_mode = request.form.get("maintenance_mode", site_settings.maintenance_mode)
+    site_settings.custom_message = request.form.get("custom_message", site_settings.custom_message)
+    db.session.commit()
+    flash("✅ Site settings updated!", "success")
+    return redirect(url_for("admin_panel"))
+
+@app.route("/admin/ad/<int:ad_id>/edit", methods=["POST"])
+def admin_edit_ad(ad_id):
+    u = current_user()
+    if not u or not u.is_admin:
+        return redirect(url_for("login"))
+    ad = Advertisement.query.get_or_404(ad_id)
+    # Update fields
+    ad.title = request.form.get("title", ad.title).strip()
+    ad.content = request.form.get("content", ad.content)
+    ad.link = request.form.get("link", ad.link)
+    ad.placement = request.form.get("placement", ad.placement)
+    # Handle image upload
+    ad_image = request.files.get("image")
+    if ad_image and ad_image.filename:
+        fname = secure_filename(ad_image.filename)
+        image_path = os.path.join("uploads", "ads", f"ad_{secrets.token_hex(4)}_{fname}")
+        os.makedirs(os.path.dirname(image_path), exist_ok=True)
+        ad_image.save(image_path)
+        ad.image = "/" + image_path.replace("\\", "/")
+    ad.updated_at = datetime.utcnow()
+    db.session.commit()
+    flash("✅ Advertisement updated!", "success")
+    return redirect(url_for("admin_panel"))
+import os, re, secrets, hashlib
+import smtplib
+import ssl
+from email.message import EmailMessage
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from datetime import datetime, date, timedelta
+from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory, flash, abort, jsonify, render_template_string
+from sqlalchemy import func
+from werkzeug.utils import secure_filename
+from markupsafe import escape
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+APP_VERSION = "3.6"
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+VIDEO_DIR = os.path.join(UPLOAD_DIR, "videos")
+THUMB_DIR = os.path.join(UPLOAD_DIR, "thumbnails")
+AVATAR_DIR = os.path.join(UPLOAD_DIR, "avatars")
+
+# Create upload directories if they don't exist
+for dir_path in [UPLOAD_DIR, VIDEO_DIR, THUMB_DIR, AVATAR_DIR, os.path.join(UPLOAD_DIR, "emojis")]:
+    os.makedirs(dir_path, exist_ok=True)
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret")
+
+# Auto-detect database: PostgreSQL > MySQL > SQLite
+database_url = os.environ.get("DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR,'cannaspot.db')}")
+# Fix Heroku/Koyeb postgres:// to postgresql://
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 512 * 1024 * 1024  # 512MB
+
+# use the centralized models/db module
+from models import (
+    db, User, Server, Channel, Membership, Video, Message, Sponsor, Activity,
+    Playlist, PlaylistVideo, Subscription, VideoLike, WatchLater, Short,
+    Notification, VoiceParticipant, Friendship, DirectMessage, hash_pw, safe_slug, EmailVerification,
+    RtcSignal, RtcParticipant, VideoComment, CustomEmoji, Post, Role, RoleMembership, Advertisement,
+    MusicBot, MusicQueue
+)
+
+# initialize db with the app
+db.init_app(app)
+
+# Real-time main content API for AJAX polling
+@app.route("/api/main-content")
+def api_main_content():
+    # Get latest videos and servers
+    bot = User.query.filter_by(username="GrowBot").first()
+    bot_id = bot.id if bot else None
+    uploaded_vids = Video.query.filter(Video.uploader_id != bot_id).order_by(Video.created_at.desc()).limit(12).all() if bot_id else []
+    youtube_vids = Video.query.filter_by(uploader_id=bot_id).order_by(Video.created_at.desc()).limit(12).all() if bot_id else []
+    servers = Server.query.order_by(Server.name).all()
+
+    # Render video HTML
+    videos_html = ""
+    if uploaded_vids:
+        videos_html += '<h2>📤 Uploaded Videos</h2><div class="video-grid">'
+        for v in uploaded_vids:
+            videos_html += f'<a class="vcard" href="/watch/{v.id}"><img class="thumb" src="{v.thumbnail or "/static/leaf.png"}"><div class="vt">{v.title}</div><div class="meta"><span>👍 {getattr(v, "like_count", 0)}</span><span style="margin-left:8px">{v.created_at.strftime("%b %d, %Y")}</span></div></a>'
+        videos_html += '</div>'
+    if youtube_vids:
+        videos_html += '<h2 style="margin-top:32px">🎬 Featured Grow Tutorials</h2><div class="video-grid">'
+        for v in youtube_vids:
+            videos_html += f'<a class="vcard" href="/watch/{v.id}"><img class="thumb" src="{v.thumbnail or "/static/leaf.png"}"><div class="vt">{v.title}</div><div class="meta"><span>👍 {getattr(v, "like_count", 0)}</span><span style="margin-left:8px">YouTube</span></div></a>'
+        videos_html += '</div>'
+    if not uploaded_vids and not youtube_vids:
+        videos_html += '<h2>Recent</h2><p>No videos yet.</p>'
+
+    # Render server HTML
+    servers_html = ""
+    for s in servers:
+        servers_html += f'<a class="side-video" href="/server/{s.slug}">🌿 {s.name}</a>'
+
+    return jsonify({"videos_html": videos_html, "servers_html": servers_html})
+
 # Add bot to server route
 @app.route("/server/<slug>/add-bot", methods=["POST"])
 def add_bot_to_server(slug):
@@ -1377,7 +1501,7 @@ def admin_panel():
     
     users = User.query.order_by(User.created_at.desc()).limit(50).all()
     videos = Video.query.order_by(Video.created_at.desc()).limit(50).all()
-    servers = Server.query.order_by(Server.created_at.desc()).all()
+    servers = Server.query.order_by(Server.created.desc()).all()
     sponsors = Sponsor.query.all()
     custom_emojis = CustomEmoji.query.order_by(CustomEmoji.category, CustomEmoji.sort_order).all()
     advertisements = Advertisement.query.order_by(Advertisement.created_at.desc()).all()
@@ -1389,10 +1513,13 @@ def admin_panel():
                       .limit(100).all())
     
     activity_log = Activity.query.order_by(Activity.created_at.desc()).limit(100).all()
+    notifications = Notification.query.order_by(Notification.created_at.desc()).limit(100).all()
+    site_settings = SiteSetting.query.first()
     return render_template("admin.html", user=u, sponsors=sponsors, stats=stats, 
                          users=users, videos=videos, servers=servers, 
                          recent_messages=recent_messages, custom_emojis=custom_emojis,
-                         advertisements=advertisements, activity_log=activity_log)
+                         advertisements=advertisements, activity_log=activity_log,
+                         notifications=notifications, site_settings=site_settings)
 
 @app.route("/admin/ad/create", methods=["POST"])
 def admin_create_ad():
@@ -1474,7 +1601,7 @@ def uploads(filename):
 @app.context_processor
 def inject_globals():
     sponsors = Sponsor.query.filter_by(active=True).all()
-    servers = Server.query.order_by(Server.created_at.desc()).all()
+    servers = Server.query.order_by(Server.created.desc()).all()
     # Get active ads for different placements
     sidebar_ads = Advertisement.query.filter_by(is_active=True, placement='sidebar').limit(3).all()
     feed_ads = Advertisement.query.filter_by(is_active=True, placement='feed').limit(2).all()

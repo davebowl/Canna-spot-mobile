@@ -101,29 +101,30 @@
         <div style="position:relative">
           <textarea id="commentText" name="text" placeholder="Add a comment... 😎" required style="width:100%;min-height:80px;padding:12px;padding-right:50px"></textarea>
           <button type="button" id="emojiBtn" class="btn ghost" style="position:absolute;right:8px;top:8px;padding:6px 10px;min-height:auto" title="Add emoji">😀</button>
-          <div id="emojiDropdown" style="display:none;position:fixed;z-index:1000;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:180px;box-shadow:0 2px 12px rgba(0,0,0,.18)"></div>
-          <style>
-            #emojiDropdown { top: -60px !important; bottom: auto !important; }
-          </style>
+          <div id="emojiDropdown" class="hidden" style="position:absolute;bottom:60px;left:8px;background:var(--soft);border:1px solid var(--green);border-radius:8px;padding:8px;min-width:180px;box-shadow:0 2px 12px rgba(0,0,0,.18);z-index:1000"></div>
         </div>
         <button type="submit" class="btn green" style="margin-top:8px">💬 Post Comment</button>
         <script>
-        // Dynamic emoji picker logic
+        // Emoji picker logic (messages.html style)
         const emojiBtn = document.getElementById('emojiBtn');
         const emojiDropdown = document.getElementById('emojiDropdown');
         const commentText = document.getElementById('commentText');
         const emojis = ['😀','😎','😂','😍','🔥','👍','🙏','🥦','🌿','💚','😇','😜','🤩','😢','😡','🤔','🎉','🍀','🍃','🍁'];
-        emojiBtn.onclick = function() {
-          emojiDropdown.innerHTML = emojis.map(e => `<button type='button' style='font-size:1.5rem;padding:6px 10px;background:none;border:none;cursor:pointer' onclick='document.getElementById("commentText").value += "${e}";document.getElementById("emojiDropdown").style.display="none";'>${e}</button>`).join(' ');          
-          // Get position of textarea
-          const rect = commentText.getBoundingClientRect();
-          emojiDropdown.style.left = (rect.left + window.scrollX) + 'px';
-          emojiDropdown.style.top = (rect.top + window.scrollY - emojiDropdown.offsetHeight - 10) + 'px';
-          emojiDropdown.style.display = 'block';
-        };
-        document.addEventListener('click', function(e) {
-          if (!emojiBtn.contains(e.target) && !emojiDropdown.contains(e.target)) {
-            emojiDropdown.style.display = 'none';
+        emojiBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          emojiDropdown.innerHTML = emojis.map(e => `<button type='button' class='emoji-btn' style='font-size:1.5rem;padding:6px 10px;background:none;border:none;cursor:pointer' data-emoji='${e}'>${e}</button>`).join(' ');
+          emojiDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+          if(!emojiBtn.contains(e.target) && !emojiDropdown.contains(e.target)) {
+            emojiDropdown.classList.add('hidden');
+          }
+        });
+        emojiDropdown.addEventListener('click', (e) => {
+          if(e.target.classList.contains('emoji-btn')) {
+            commentText.value += e.target.dataset.emoji;
+            commentText.focus();
+            emojiDropdown.classList.add('hidden');
           }
         });
         </script>

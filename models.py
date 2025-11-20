@@ -6,6 +6,14 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
+class SiteSetting(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    site_name = db.Column(db.String(120), default="CannaSpot")
+    maintenance_mode = db.Column(db.String(10), default="off")
+    custom_message = db.Column(db.Text)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     uname = db.Column(db.String(80), unique=True, nullable=False)

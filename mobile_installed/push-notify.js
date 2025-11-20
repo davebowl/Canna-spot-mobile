@@ -27,6 +27,7 @@ async function subscribeUser() {
         } catch (err) {
           alert('Failed to send subscription to backend: ' + err);
         }
+
         // Show a test notification immediately
         if (reg.showNotification) {
           reg.showNotification('Test Notification', {
