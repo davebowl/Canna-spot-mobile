@@ -71,9 +71,27 @@ input[type="text"], input[type="password"], input[type="email"], input[type="url
 .install-card h1 { color: var(--text); }
 .install-card p { color: var(--dim); }
 textarea { font-family: inherit; resize: vertical; }
-</style>
+<style>
+body.install-contrast {
+    background: #fff !important;
+    color: #222 !important;
+}
+.install-card, .install-section {
+    background: #fff !important;
+    color: #222 !important;
+    border-color: #222 !important;
+}
+input, select, textarea {
+    background: #fff !important;
+    color: #222 !important;
+    border-color: #222 !important;
+}
+label, .help-text, h1, h2, h3, h4, h5, h6 {
+    color: #222 !important;
+}
 
 <!-- Welcome Banner -->
+document.body.classList.add('install-contrast');
 <div class="welcome-banner">
     <h1>🌿 Welcome to CannaSpot!</h1>
     <p>This platform is made possible thanks to</p>
