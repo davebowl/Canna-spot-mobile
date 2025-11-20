@@ -29,6 +29,42 @@ def migrate():
     except sqlite3.OperationalError:
         migrations.append(("User.dname", "ALTER TABLE user ADD COLUMN dname VARCHAR(120)"))
 
+    # Add admin column to User table
+    try:
+        cursor.execute("SELECT admin FROM user LIMIT 1")
+    except sqlite3.OperationalError:
+        migrations.append(("User.admin", "ALTER TABLE user ADD COLUMN admin BOOLEAN DEFAULT 0"))
+
+    # Add avatar column to User table
+    try:
+        cursor.execute("SELECT avatar FROM user LIMIT 1")
+    except sqlite3.OperationalError:
+        migrations.append(("User.avatar", "ALTER TABLE user ADD COLUMN avatar VARCHAR(255)"))
+
+    # Add p_html column to User table
+    try:
+        cursor.execute("SELECT p_html FROM user LIMIT 1")
+    except sqlite3.OperationalError:
+        migrations.append(("User.p_html", "ALTER TABLE user ADD COLUMN p_html TEXT"))
+
+    # Add status column to User table
+    try:
+        cursor.execute("SELECT status FROM user LIMIT 1")
+    except sqlite3.OperationalError:
+        migrations.append(("User.status", "ALTER TABLE user ADD COLUMN status VARCHAR(20) DEFAULT 'online'"))
+
+    # Add seen column to User table
+    try:
+        cursor.execute("SELECT seen FROM user LIMIT 1")
+    except sqlite3.OperationalError:
+        migrations.append(("User.seen", "ALTER TABLE user ADD COLUMN seen DATETIME"))
+
+    # Add created column to User table
+    try:
+        cursor.execute("SELECT created FROM user LIMIT 1")
+    except sqlite3.OperationalError:
+        migrations.append(("User.created", "ALTER TABLE user ADD COLUMN created DATETIME"))
+
     # Add created column to Server table
     try:
         cursor.execute("SELECT created FROM server LIMIT 1")
@@ -210,20 +246,4 @@ def migrate():
     conn.close()
 
 if __name__ == "__main__":
-    def migrate():
-        print("🔧 Starting database migration...")
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        migrations = []
-
-        # Add pw_hash column to User table
-        try:
-            cursor.execute("SELECT pw_hash FROM user LIMIT 1")
-        except sqlite3.OperationalError:
-            migrations.append(("User.pw_hash", "ALTER TABLE user ADD COLUMN pw_hash VARCHAR(256)"))
-
-        # Add dname column to User table
-        try:
-            cursor.execute("SELECT dname FROM user LIMIT 1")
-        except sqlite3.OperationalError:
-            migrations.append(("User.dname", "ALTER TABLE user ADD COLUMN dname VARCHAR(120)"))
+    migrate()

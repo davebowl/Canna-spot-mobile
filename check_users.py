@@ -18,8 +18,8 @@ with app.app_context():
         print(f"❌ Found {len(users)} user(s) in database:")
         print("\nExisting users:")
         for u in users:
-            admin_flag = " [ADMIN]" if u.is_admin else ""
-            print(f"  - {u.username} ({u.email}){admin_flag} - ID: {u.id}")
+            admin_flag = " [ADMIN]" if getattr(u, "is_admin", False) else ""
+            print(f"  - {u.uname} ({u.email}){admin_flag} - ID: {u.id}")
         print("\nThis is why /install redirects to /installed")
         print("\nOptions:")
         print("1. Use /installed page instead")
