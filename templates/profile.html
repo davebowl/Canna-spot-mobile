@@ -7,8 +7,11 @@
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
-        {% set card_style = 'padding:15px;margin-bottom:20px;background:' + ('rgba(0,255,153,0.1)' if category == 'success' else 'rgba(255,0,0,0.1)') + ';border:1px solid ' + ('var(--green)' if category == 'success' else '#ff0000') + ';' %}
-        <div class="card" style="{{ card_style }}">{{ message }}</div>
+        {% if category == 'success' %}
+          <div class="card" style="padding:15px;margin-bottom:20px;background:rgba(0,255,153,0.1);border:1px solid var(--green);">{{ message }}</div>
+        {% else %}
+          <div class="card" style="padding:15px;margin-bottom:20px;background:rgba(255,0,0,0.1);border:1px solid #ff0000;">{{ message }}</div>
+        {% endif %}
       {% endfor %}
     {% endif %}
   {% endwith %}
@@ -20,8 +23,11 @@
       <button class="btn {{ 'green' if user.status == 'online' else 'ghost' }}" onclick="setStatus('online')">
         🟢 Online
       </button>
-      {% set stoned_style = 'background:#ff00ff;color:#000' if user.status == 'too_stoned' else '' %}
-      <button class="btn {{ 'ghost' if user.status != 'too_stoned' else '' }}" onclick="setStatus('too_stoned')" style="{{ stoned_style }}">🟣 Too Stoned</button>
+      {% if user.status == 'too_stoned' %}
+        <button class="btn" onclick="setStatus('too_stoned')" style="background:#ff00ff;color:#000">🟣 Too Stoned</button>
+      {% else %}
+        <button class="btn ghost" onclick="setStatus('too_stoned')">🟣 Too Stoned</button>
+      {% endif %}
       <button class="btn {{ 'ghost' if user.status != 'offline' else '' }}" onclick="setStatus('offline')">
         ⚫ Offline
       </button>
@@ -102,7 +108,6 @@ async function setStatus(status) {
   if (res.ok) {
     const data = await res.json();
     document.getElementById('currentStatus').textContent = data.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-    
     // Update button styles
     document.querySelectorAll('.btn').forEach(btn => {
       btn.classList.remove('green');
