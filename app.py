@@ -772,14 +772,14 @@ def login():
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
-        if User.query.filter_by(uname=request.form["username"]).first():
+        if User.query.filter_by(uname=request.form["uname"]).first():
             return "Username already exists", 400
         else:
             u = User(
-                uname=request.form["username"],
+                uname=request.form["uname"],
                 email=request.form["email"],
-                display=request.form.get("display") or request.form["username"],
-                password_hash=hash_pw(request.form["password"])
+                dname=request.form.get("dname") or request.form["uname"],
+                pw_hash=hash_pw(request.form["password"])
             )
             db.session.add(u)
             db.session.commit()
@@ -1243,7 +1243,7 @@ def change_password():
 @app.route("/theGspot", methods=["GET","POST"])
 def admin_panel():
     u = current_user()
-    if not (u and u.is_admin): abort(403)
+    if not (u and u.admin): abort(403)
     if request.method == "POST":
         action = request.form.get("action")
         
@@ -1252,7 +1252,7 @@ def admin_panel():
             uid = int(request.form.get("user_id"))
             x = User.query.get(uid)
             if x:
-                x.is_admin = True
+                x.admin = True
                 db.session.commit()
                 flash(f"✅ {x.username} is now an admin", "success")
 
@@ -1260,7 +1260,7 @@ def admin_panel():
             uid = int(request.form.get("user_id"))
             x = User.query.get(uid)
             if x and x.id != u.id:  # Can't demote yourself
-                x.is_admin = False
+                x.admin = False
                 db.session.commit()
                 flash(f"✅ Removed admin from {x.username}", "success")
 
@@ -1488,13 +1488,13 @@ def admin_panel():
         "servers": Server.query.count(),
         "channels": Channel.query.count(),
         "sponsors": Sponsor.query.count(),
-        "admins": User.query.filter_by(is_admin=True).count(),
+        "admins": User.query.filter_by(admin=True).count(),
         "custom_emojis": CustomEmoji.query.filter_by(is_active=True).count(),
         "ads": Advertisement.query.count(),
         "active_ads": Advertisement.query.filter_by(is_active=True).count(),
     }
     
-    users = User.query.order_by(User.created_at.desc()).limit(50).all()
+    users = User.query.order_by(User.created.desc()).limit(50).all()
     videos = Video.query.order_by(Video.created_at.desc()).limit(50).all()
     servers = Server.query.order_by(Server.created.desc()).all()
     sponsors = Sponsor.query.all()
