@@ -772,8 +772,13 @@ def login():
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
+        error = None
         if User.query.filter_by(uname=request.form["uname"]).first():
-            return "Username already exists", 400
+            error = "Username already exists."
+        elif User.query.filter_by(email=request.form["email"]).first():
+            error = "Email already registered."
+        if error:
+            return render_template("register.html", error=error)
         else:
             u = User(
                 uname=request.form["uname"],
